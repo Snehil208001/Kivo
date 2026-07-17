@@ -1,7 +1,7 @@
 import LandingPage from '../../components/LandingPage';
 
 const content = {
-  handle: 'eco-bundle',
+  handle: 'zero-waste-kitchen-starter-bundle',
   theme: 'lime',
   eyebrow: '🌱 Plastic-Free Starter Kit',
   headline: 'Ditch single-use plastic today.',

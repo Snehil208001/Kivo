@@ -24,28 +24,6 @@ function money(amount) {
   return { amount: amount.toFixed(2), currencyCode: 'INR' };
 }
 
-// Feature bullets by product type — used when a product has no explicit list.
-const DEFAULT_FEATURES = {
-  Cleaning: [
-    'Cuts everyday cleaning time in half',
-    'Durable build made to last for years',
-    'Easy to rinse, dry and store away',
-    'Safe on common household surfaces',
-  ],
-  'Personal Care': [
-    'Salon-quality results at home',
-    'Gentle enough for daily use',
-    'Ergonomic, no-slip grip',
-    'Lightweight and travel-friendly',
-  ],
-  Eco: [
-    'Plastic-free and fully reusable',
-    'Replaces hundreds of single-use items',
-    'Made from natural, durable materials',
-    'Ships in compostable packaging',
-  ],
-};
-
 let idc = 1;
 function makeProduct({
   title,
@@ -56,7 +34,6 @@ function makeProduct({
   tags = [],
   description,
   images,
-  features,
 }) {
   const gid = `gid://shopify/Product/mock-${idc}`;
   const variantId = `gid://shopify/ProductVariant/mock-${idc}`;
@@ -68,7 +45,6 @@ function makeProduct({
     description,
     descriptionHtml: `<p>${description}</p>`,
     tags,
-    features: features || DEFAULT_FEATURES[type] || DEFAULT_FEATURES.Cleaning,
     availableForSale: true,
     productType: type,
     priceRange: { minVariantPrice: money(price) },

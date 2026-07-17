@@ -74,13 +74,16 @@ export default function Product() {
     );
   }
 
+  // Out of stock => no buyable variant, so the buy buttons disable themselves.
+  const buyable = product.availableForSale ? product.defaultVariantId : null;
+
   // Same-collection suggestions (fall back to any other products).
   const sameType = (allProducts || []).filter(
     (p) => p.id !== product.id && p.productType === product.productType
   );
   const others = (allProducts || []).filter((p) => p.id !== product.id);
   const pool = sameType.length >= 2 ? sameType : others;
-  const bundleSuggestions = pool.slice(0, 2);
+  const bundleSuggestions = pool.filter((p) => p.availableForSale).slice(0, 2);
   const related = pool.slice(0, 4);
 
   return (
@@ -189,12 +192,12 @@ export default function Product() {
           <div className="mt-6 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
               <AddToCartButton
-                variantId={product.defaultVariantId}
+                variantId={buyable}
                 className="btn-outline btn-lg btn-block"
                 label="Add to Cart"
               />
               <BuyNowButton
-                variantId={product.defaultVariantId}
+                variantId={buyable}
                 className="btn-pop btn-lg btn-block"
                 label="Buy Now"
               />
@@ -216,7 +219,9 @@ export default function Product() {
           </div>
 
           {/* Bundle: Buy 2, Get 10% Off */}
-          <BundleOffer product={product} suggestions={bundleSuggestions} />
+          {buyable && (
+            <BundleOffer product={product} suggestions={bundleSuggestions} />
+          )}
 
           {/* Extra description HTML if provided by Shopify */}
           {product.descriptionHtml &&
@@ -256,12 +261,12 @@ export default function Product() {
             )}
           </div>
           <AddToCartButton
-            variantId={product.defaultVariantId}
+            variantId={buyable}
             className="btn-outline flex-1 py-3 text-sm"
             label="Add"
           />
           <BuyNowButton
-            variantId={product.defaultVariantId}
+            variantId={buyable}
             className="btn-pop flex-1 py-3 text-sm"
             label="Buy Now"
           />

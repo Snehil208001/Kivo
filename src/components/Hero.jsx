@@ -9,7 +9,7 @@ const AVATARS = [
   { i: 'A', bg: '#FFB020' },
 ];
 
-export default function Hero({ featured }) {
+export default function Hero({ featured, collection }) {
   return (
     <section className="relative overflow-hidden bg-mint">
       {/* Ambient blobs */}
@@ -39,8 +39,11 @@ export default function Hero({ featured }) {
               Shop Bestsellers
               <ArrowRight size={18} />
             </Link>
-            <Link to="/collections/eco" className="btn-outline btn-lg">
-              Explore Eco Range
+            <Link
+              to={collection ? `/collections/${collection.handle}` : '/shop'}
+              className="btn-outline btn-lg"
+            >
+              {collection ? `Explore ${collection.title}` : 'Browse all products'}
             </Link>
           </div>
 

@@ -34,12 +34,24 @@ export async function fetchProductByHandle(handle) {
   return getProductByHandle(handle);
 }
 
+// Navbar, Footer and Home all want the collection list; cache the in-flight
+// promise so one page load makes one request.
+let collectionsCache;
+
 export async function fetchCollections() {
-  if (!isShopifyConfigured) {
-    await mockDelay();
-    return MOCK_COLLECTIONS.map(normalizeCollection);
+  if (!collectionsCache) {
+    collectionsCache = (async () => {
+      if (!isShopifyConfigured) {
+        await mockDelay();
+        return MOCK_COLLECTIONS.map(normalizeCollection);
+      }
+      return getCollections();
+    })().catch((err) => {
+      collectionsCache = undefined; // let a later render retry
+      throw err;
+    });
   }
-  return getCollections();
+  return collectionsCache;
 }
 
 export async function fetchCollectionByHandle(handle) {

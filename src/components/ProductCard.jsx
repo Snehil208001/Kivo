@@ -13,11 +13,15 @@ export default function ProductCard({ product }) {
     featuredImage,
     isBestseller,
     defaultVariantId,
+    availableForSale,
     rating,
     reviews,
     sold,
     lowStock,
   } = product;
+
+  // Out of stock => no buyable variant, so the buy button disables itself.
+  const buyable = availableForSale ? defaultVariantId : null;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
@@ -60,7 +64,7 @@ export default function ProductCard({ product }) {
         {/* Desktop hover quick-add */}
         <div className="pointer-events-none absolute inset-x-2.5 bottom-2.5 hidden translate-y-3 opacity-0 transition-all duration-300 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 md:block">
           <AddToCartButton
-            variantId={defaultVariantId}
+            variantId={buyable}
             className="btn-primary btn-block py-2.5 text-sm"
             label="Quick Add"
             openCartOnAdd
@@ -99,7 +103,7 @@ export default function ProductCard({ product }) {
 
         {/* Mobile add-to-cart (always visible; desktop uses hover overlay) */}
         <AddToCartButton
-          variantId={defaultVariantId}
+          variantId={buyable}
           className="btn-primary btn-block mt-3 py-2.5 text-sm md:hidden"
           label="Add to Cart"
         />

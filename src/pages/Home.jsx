@@ -7,6 +7,7 @@ import SectionHeader from '../components/SectionHeader';
 import ProductGrid, { ProductGridSkeleton } from '../components/ProductGrid';
 import { StatsBand, ValueProps, Reviews } from '../components/HomeSections';
 import { useProducts, useCollections } from '../hooks/useCatalog';
+import { visibleCollections } from '../lib/config';
 
 export default function Home() {
   const { data: products, loading: productsLoading } = useProducts();
@@ -19,15 +20,20 @@ export default function Home() {
   );
   const featured = bestsellerList[0] || null;
 
+  // Every collection from Shopify, minus its auto-created default.
+  const shopCollections = visibleCollections(collections);
+
   return (
     <>
-      <Hero featured={featured} />
+      <Hero featured={featured} collection={shopCollections[0]} />
 
       {/* Signature offer marquee */}
       <Marquee variant="dark" />
 
       {/* Stats band */}
-      <section className="container-page -mt-8 md:-mt-10">
+      {/* No negative margin here: the marquee sits directly above and a pull-up
+          would cover it. */}
+      <section className="container-page mt-10">
         <StatsBand />
       </section>
 
@@ -38,7 +44,7 @@ export default function Home() {
           title="Find your fix, fast."
           subtitle="Three edits, zero guesswork."
         />
-        <CollectionBanners />
+        <CollectionBanners collections={shopCollections} />
       </section>
 
       {/* Bestsellers */}
@@ -62,7 +68,7 @@ export default function Home() {
       </div>
 
       {/* Per-collection previews */}
-      {(collectionsLoading ? [] : collections || []).map((collection) => (
+      {(collectionsLoading ? [] : shopCollections).map((collection) => (
         <section key={collection.id} className="container-page mt-16">
           <SectionHeader
             title={collection.title}
@@ -96,9 +102,14 @@ export default function Home() {
               Shop all products
               <ArrowRight size={18} />
             </Link>
-            <Link to="/collections/cleaning" className="btn-outline btn-lg border-white/20 bg-white/10 text-white hover:border-white hover:text-white">
-              Start with Cleaning
-            </Link>
+            {shopCollections[0] && (
+              <Link
+                to={`/collections/${shopCollections[0].handle}`}
+                className="btn-outline btn-lg border-white/20 bg-white/10 text-white hover:border-white hover:text-white"
+              >
+                Start with {shopCollections[0].title}
+              </Link>
+            )}
           </div>
         </div>
       </section>

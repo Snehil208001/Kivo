@@ -6,7 +6,8 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import Logo from './Logo';
-import { whatsappLink } from '../lib/config';
+import { whatsappLink, visibleCollections } from '../lib/config';
+import { useCollections } from '../hooks/useCatalog';
 
 const GUARANTEES = [
   { icon: BadgeIndianRupee, label: 'Cash on Delivery' },
@@ -16,6 +17,8 @@ const GUARANTEES = [
 ];
 
 export default function Footer() {
+  const { data: collections } = useCollections();
+
   return (
     <footer className="mt-16 border-t border-accent/5 bg-white">
       {/* Guarantee bar */}
@@ -45,9 +48,13 @@ export default function Footer() {
           <h4 className="mb-3 text-sm font-bold text-accent">Shop</h4>
           <ul className="space-y-2 text-sm text-accent/60">
             <li><Link to="/shop" className="hover:text-primary">All Products</Link></li>
-            <li><Link to="/collections/cleaning" className="hover:text-primary">Cleaning</Link></li>
-            <li><Link to="/collections/personal-care" className="hover:text-primary">Personal Care</Link></li>
-            <li><Link to="/collections/eco" className="hover:text-primary">Eco</Link></li>
+            {visibleCollections(collections).slice(0, 5).map((c) => (
+              <li key={c.id}>
+                <Link to={`/collections/${c.handle}`} className="hover:text-primary">
+                  {c.title}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
 

@@ -1,10 +1,10 @@
 import LandingPage from '../../components/LandingPage';
 
 const content = {
-  handle: 'spin-mop',
+  handle: 'premium-spin-mop',
   theme: 'primary',
   eyebrow: '🧽 #1 Bestselling Mop',
-  headline: 'Clean floors in half the time.',
+  headline: 'Clean House in 10 Min',
   sub: 'The KIVO 360° Spin Mop wrings itself dry — no bending, no wet hands, no mess. Just glide and go.',
   benefits: [
     { emoji: '💪', title: 'Hands-Free Wringing', copy: 'One pedal push wrings the mop dry or damp. Zero touching dirty water.' },

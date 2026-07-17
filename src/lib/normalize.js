@@ -1,4 +1,5 @@
 // Flatten Shopify GraphQL shapes into simple objects the UI consumes.
+import { FEATURES_BY_TYPE } from './config';
 
 export function formatMoney(amount, currencyCode = 'INR') {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -62,7 +63,7 @@ export function normalizeProduct(p) {
     descriptionHtml: p.descriptionHtml || '',
     productType: p.productType || '',
     tags,
-    features: p.features || [],
+    features: p.features?.length ? p.features : FEATURES_BY_TYPE[p.productType] || [],
     codAvailable,
     availableForSale: p.availableForSale ?? true,
     price: price?.amount ?? '0',

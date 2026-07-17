@@ -1,7 +1,7 @@
 import LandingPage from '../../components/LandingPage';
 
 const content = {
-  handle: 'face-roller',
+  handle: 'ice-roller-jade-face-roller-set',
   theme: 'pink',
   eyebrow: '💆 Viral Skincare Tool',
   headline: 'Depuff & glow in 3 minutes a day.',
