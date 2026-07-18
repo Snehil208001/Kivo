@@ -5,6 +5,7 @@ import {
   CART_LINES_ADD_MUTATION,
   CART_LINES_UPDATE_MUTATION,
   CART_LINES_REMOVE_MUTATION,
+  CART_DISCOUNT_CODES_UPDATE_MUTATION,
 } from './queries';
 import { normalizeCart, formatMoney } from './normalize';
 import { MOCK_PRODUCTS_DEDUPED } from './mockData';
@@ -181,6 +182,20 @@ export async function removeLines(cartId, lineIds) {
  * so buying now never disturbs what the shopper already has in their bag.
  * In mock mode this returns the sentinel MOCK_CHECKOUT_URL.
  */
+// Apply (or clear, with []) discount codes on the cart. Real codes are
+// validated by Shopify; demo mode just returns the cart unchanged.
+export async function updateDiscountCodes(cartId, codes) {
+  if (!isShopifyConfigured) {
+    return normalizeCart(buildMockCart());
+  }
+  const data = await shopifyFetch(CART_DISCOUNT_CODES_UPDATE_MUTATION, {
+    cartId,
+    discountCodes: codes,
+  });
+  throwOnUserErrors(data.cartDiscountCodesUpdate?.userErrors);
+  return normalizeCart(data.cartDiscountCodesUpdate?.cart);
+}
+
 export async function buyNowUrl(lines) {
   const cart = await createCart(lines);
   return cart?.checkoutUrl || null;

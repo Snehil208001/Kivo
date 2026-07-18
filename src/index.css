@@ -98,6 +98,40 @@
   .link-quiet {
     @apply text-accent/60 transition hover:text-primary;
   }
+
+  /* Rich text from Shopify (product descriptionHtml, pages). Tames supplier
+     HTML — headings, lists, bold — so it fits the design without a plugin. */
+  .rte {
+    @apply text-[15px] leading-relaxed text-accent/70;
+  }
+  .rte h1 {
+    @apply mb-2 mt-5 font-display text-xl font-bold text-accent;
+  }
+  .rte h2 {
+    @apply mb-2 mt-5 font-display text-lg font-bold text-accent;
+  }
+  .rte h3 {
+    @apply mb-1.5 mt-4 font-semibold text-accent;
+  }
+  .rte p {
+    @apply mb-3;
+  }
+  .rte ul {
+    @apply mb-3 list-disc space-y-1 pl-5;
+  }
+  .rte ol {
+    @apply mb-3 list-decimal space-y-1 pl-5;
+  }
+  .rte a {
+    @apply font-medium text-primary underline;
+  }
+  .rte strong,
+  .rte b {
+    @apply font-semibold text-accent;
+  }
+  .rte img {
+    @apply my-3 rounded-xl;
+  }
 }
 
 @layer utilities {

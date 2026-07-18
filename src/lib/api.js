@@ -5,7 +5,7 @@ import {
   getProductByHandle,
   getCollections,
 } from './shopify';
-import { COLLECTION_BY_HANDLE_QUERY } from './queries';
+import { COLLECTION_BY_HANDLE_QUERY, PAGE_BY_HANDLE_QUERY } from './queries';
 import { MOCK_PRODUCTS_DEDUPED, MOCK_COLLECTIONS } from './mockData';
 import { normalizeProduct, normalizeCollection } from './normalize';
 
@@ -65,4 +65,12 @@ export async function fetchCollectionByHandle(handle) {
     first: 24,
   });
   return normalizeCollection(data.collection);
+}
+
+// Content pages (policies, About) live in Shopify Pages so copy is editable
+// without a redeploy. No mock equivalent — demo mode returns null.
+export async function fetchPage(handle) {
+  if (!isShopifyConfigured) return null;
+  const data = await shopifyFetch(PAGE_BY_HANDLE_QUERY, { handle });
+  return data.page || null;
 }

@@ -122,6 +122,19 @@ export const COLLECTION_BY_HANDLE_QUERY = /* GraphQL */ `
   }
 `;
 
+// --- Content pages (Shipping/Refund/Privacy/Terms/About) ---
+
+export const PAGE_BY_HANDLE_QUERY = /* GraphQL */ `
+  query PageByHandle($handle: String!) {
+    page(handle: $handle) {
+      id
+      title
+      handle
+      body
+    }
+  }
+`;
+
 // --- Cart mutations ---
 
 const CART_FRAGMENT = /* GraphQL */ `
@@ -129,6 +142,10 @@ const CART_FRAGMENT = /* GraphQL */ `
     id
     checkoutUrl
     totalQuantity
+    discountCodes {
+      code
+      applicable
+    }
     cost {
       subtotalAmount {
         amount
@@ -187,6 +204,21 @@ export const CART_QUERY = /* GraphQL */ `
   query Cart($id: ID!) {
     cart(id: $id) {
       ...CartFields
+    }
+  }
+`;
+
+export const CART_DISCOUNT_CODES_UPDATE_MUTATION = /* GraphQL */ `
+  ${CART_FRAGMENT}
+  mutation CartDiscountCodesUpdate($cartId: ID!, $discountCodes: [String!]) {
+    cartDiscountCodesUpdate(cartId: $cartId, discountCodes: $discountCodes) {
+      cart {
+        ...CartFields
+      }
+      userErrors {
+        field
+        message
+      }
     }
   }
 `;

@@ -9,6 +9,9 @@ import Home from './pages/Home';
 import Shop from './pages/Shop';
 import CollectionPage from './pages/CollectionPage';
 import Product from './pages/Product';
+import ShopifyPage from './pages/ShopifyPage';
+import Contact from './pages/Contact';
+import Track from './pages/Track';
 import NotFound from './pages/NotFound';
 
 // Landing pages (no navbar / footer — conversion focused).
@@ -32,6 +35,9 @@ export default function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/collections/:handle" element={<CollectionPage />} />
           <Route path="/products/:handle" element={<Product />} />
+          <Route path="/pages/:handle" element={<ShopifyPage />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/track" element={<Track />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

@@ -5,6 +5,7 @@ import {
   addLines,
   updateLines,
   removeLines,
+  updateDiscountCodes,
 } from '../lib/cart';
 import { isShopifyConfigured } from '../lib/shopify';
 
@@ -126,6 +127,34 @@ export const useCartStore = create((set, get) => ({
       set({ cart, loading: false });
     } catch (err) {
       set({ loading: false, error: err.message || 'Could not remove item' });
+    }
+  },
+
+  // Apply a discount code. Returns true if Shopify accepted it (i.e. the code
+  // is now in the cart's applicable codes), false otherwise.
+  applyDiscount: async (code) => {
+    const { cartId } = get();
+    if (!cartId || !code) return false;
+    set({ loading: true });
+    try {
+      const cart = await updateDiscountCodes(cartId, [code]);
+      set({ cart, loading: false });
+      return (cart?.appliedCodes || []).length > 0;
+    } catch {
+      set({ loading: false });
+      return false;
+    }
+  },
+
+  removeDiscount: async () => {
+    const { cartId } = get();
+    if (!cartId) return;
+    set({ loading: true });
+    try {
+      const cart = await updateDiscountCodes(cartId, []);
+      set({ cart, loading: false });
+    } catch {
+      set({ loading: false });
     }
   },
 

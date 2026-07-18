@@ -2,6 +2,12 @@
 
 export const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || '919999999999';
 
+// Optional public support email (shown on the Contact page if set).
+export const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || '';
+
+// Free-shipping threshold (₹). Must match your Shopify shipping rule.
+export const FREE_SHIPPING_THRESHOLD = 499;
+
 export function whatsappLink(message = "Hi KIVO! I have a question about my order.") {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }

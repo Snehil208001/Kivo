@@ -61,9 +61,10 @@ export default function Footer() {
         <div>
           <h4 className="mb-3 text-sm font-bold text-accent">Help</h4>
           <ul className="space-y-2 text-sm text-accent/60">
-            <li><span className="cursor-default">Cash on Delivery</span></li>
-            <li><span className="cursor-default">7-Day Returns</span></li>
-            <li><span className="cursor-default">Shipping &amp; Tracking</span></li>
+            <li><Link to="/contact" className="hover:text-primary">Contact Us</Link></li>
+            <li><Link to="/track" className="hover:text-primary">Track Order</Link></li>
+            <li><Link to="/pages/shipping-policy" className="hover:text-primary">Shipping Policy</Link></li>
+            <li><Link to="/pages/refund-policy" className="hover:text-primary">Returns &amp; Refunds</Link></li>
             <li>
               <a
                 href={whatsappLink('Hi KIVO! I need help.')}
@@ -80,29 +81,31 @@ export default function Footer() {
         <div>
           <h4 className="mb-3 text-sm font-bold text-accent">Get updates</h4>
           <p className="mb-3 text-sm text-accent/60">
-            Deals &amp; new drops, no spam.
+            Deals &amp; new drops on WhatsApp — no spam.
           </p>
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => e.preventDefault()}
+          <a
+            href={whatsappLink(
+              'Hi KIVO! Please add me to your deals & new-drop updates.'
+            )}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-primary px-4 py-2.5 text-sm"
           >
-            <input
-              type="email"
-              required
-              placeholder="you@email.com"
-              className="min-w-0 flex-1 rounded-lg border border-accent/10 px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-            <button type="submit" className="btn-primary px-4 py-2 text-sm">
-              Join
-            </button>
-          </form>
+            <MessageCircle size={16} />
+            Get deals on WhatsApp
+          </a>
         </div>
       </div>
 
       <div className="border-t border-accent/5">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-5 text-xs text-accent/50 sm:flex-row">
+        <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs text-accent/50 sm:flex-row">
           <p>© {new Date().getFullYear()} KIVO. All rights reserved.</p>
-          <p>Secure checkout powered by Shopify · COD &amp; Razorpay</p>
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link to="/pages/about" className="hover:text-primary">About</Link>
+            <Link to="/pages/privacy-policy" className="hover:text-primary">Privacy</Link>
+            <Link to="/pages/terms-of-service" className="hover:text-primary">Terms</Link>
+            <Link to="/pages/refund-policy" className="hover:text-primary">Refunds</Link>
+          </nav>
         </div>
       </div>
     </footer>

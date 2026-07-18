@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus, Trash2, ShoppingBag, ShieldCheck } from 'lucide-react';
+import { X, Plus, Minus, Trash2, ShoppingBag, ShieldCheck, Tag } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { MOCK_CHECKOUT_URL } from '../lib/cart';
+import { formatMoney } from '../lib/normalize';
+import { FREE_SHIPPING_THRESHOLD } from '../lib/config';
 import { CodBadge } from './TrustBadges';
 
 export default function CartSidebar() {
@@ -180,12 +182,39 @@ export default function CartSidebar() {
         {/* Footer / checkout */}
         {!isEmpty && (
           <div className="border-t border-accent/10 bg-white px-4 py-4">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm text-accent/60">Subtotal</span>
-              <span className="text-xl font-extrabold text-accent">
-                {cart.subtotalFormatted}
-              </span>
-            </div>
+            <FreeShippingBar
+              subtotal={cart.subtotalValue}
+              currencyCode={cart.currencyCode}
+            />
+
+            <DiscountField />
+
+            {cart.discountFormatted ? (
+              <>
+                <div className="flex items-center justify-between text-sm text-accent/60">
+                  <span>Subtotal</span>
+                  <span>{cart.subtotalFormatted}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between text-sm font-semibold text-primary-deep">
+                  <span>Discount</span>
+                  <span>−{cart.discountFormatted}</span>
+                </div>
+                <div className="mb-3 mt-2 flex items-center justify-between border-t border-accent/10 pt-2">
+                  <span className="text-sm text-accent/60">Total</span>
+                  <span className="text-xl font-extrabold text-accent">
+                    {cart.totalFormatted}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-sm text-accent/60">Subtotal</span>
+                <span className="text-xl font-extrabold text-accent">
+                  {cart.subtotalFormatted}
+                </span>
+              </div>
+            )}
+
             <p className="mb-3 text-center text-xs text-accent/50">
               Shipping &amp; taxes calculated at checkout
             </p>
@@ -207,5 +236,105 @@ export default function CartSidebar() {
         )}
       </aside>
     </>
+  );
+}
+
+// Progress toward the free-shipping threshold.
+function FreeShippingBar({ subtotal, currencyCode }) {
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - (subtotal || 0));
+  const pct = Math.min(100, ((subtotal || 0) / FREE_SHIPPING_THRESHOLD) * 100);
+  return (
+    <div className="mb-3">
+      <p className="mb-1.5 text-xs font-medium text-accent/70">
+        {remaining > 0 ? (
+          <>
+            You're{' '}
+            <span className="font-bold text-primary">
+              {formatMoney(remaining, currencyCode)}
+            </span>{' '}
+            away from free shipping
+          </>
+        ) : (
+          <span className="font-bold text-primary">
+            🎉 You've unlocked free shipping!
+          </span>
+        )}
+      </p>
+      <div className="h-2 overflow-hidden rounded-full bg-accent/10">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Discount-code input. Applies via the Shopify Cart API; shows the applied code
+// with a remove option, or an inline error if the code is invalid.
+function DiscountField() {
+  const applyDiscount = useCartStore((s) => s.applyDiscount);
+  const removeDiscount = useCartStore((s) => s.removeDiscount);
+  const applied = useCartStore((s) => s.cart?.appliedCodes || []);
+  const discountFormatted = useCartStore((s) => s.cart?.discountFormatted);
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function apply(e) {
+    e.preventDefault();
+    const value = code.trim();
+    if (!value) return;
+    setBusy(true);
+    setError('');
+    const ok = await applyDiscount(value);
+    setBusy(false);
+    if (ok) setCode('');
+    else setError("That code isn't valid or has expired.");
+  }
+
+  if (applied.length) {
+    return (
+      <div className="mb-3 flex items-center justify-between rounded-lg bg-primary-light px-3 py-2 text-sm">
+        <span className="flex items-center gap-1.5 font-semibold text-primary-deep">
+          <Tag size={13} />
+          {applied.join(', ')}
+          {discountFormatted && (
+            <span className="font-normal">(−{discountFormatted})</span>
+          )}
+        </span>
+        <button
+          onClick={() => removeDiscount()}
+          className="text-xs text-accent/50 hover:text-red-500"
+        >
+          Remove
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={apply} className="mb-3">
+      <div className="flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => {
+            setCode(e.target.value);
+            setError('');
+          }}
+          placeholder="Discount code"
+          aria-label="Discount code"
+          className="min-w-0 flex-1 rounded-lg border border-accent/10 px-3 py-2 text-sm uppercase outline-none focus:border-primary"
+        />
+        <button
+          type="submit"
+          disabled={busy || !code.trim()}
+          className="btn-outline px-4 py-2 text-sm"
+        >
+          {busy ? 'Applying…' : 'Apply'}
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </form>
   );
 }

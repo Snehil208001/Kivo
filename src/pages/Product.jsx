@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ChevronRight,
@@ -7,6 +8,8 @@ import {
   RotateCcw,
   Check,
   Flame,
+  Minus,
+  Plus,
   BadgeIndianRupee,
 } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
@@ -55,6 +58,7 @@ export default function Product() {
   const { handle } = useParams();
   const { data: product, loading, error } = useProduct(handle);
   const { data: allProducts } = useProducts();
+  const [qty, setQty] = useState(1);
 
   if (loading) return <ProductSkeleton />;
 
@@ -163,11 +167,18 @@ export default function Product() {
           <ProductBadges />
 
           {/* Description */}
-          {product.description && (
+          {/* Description — rich HTML from Shopify when present, else plain text.
+              Rendered once (previously both showed, duplicating the copy). */}
+          {product.descriptionHtml ? (
+            <div
+              className="rte mt-5"
+              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+            />
+          ) : product.description ? (
             <p className="mt-5 text-[15px] leading-relaxed text-accent/70">
               {product.description}
             </p>
-          )}
+          ) : null}
 
           {/* Features */}
           {product.features?.length > 0 && (
@@ -188,16 +199,40 @@ export default function Product() {
             </div>
           )}
 
-          {/* CTA: Add to Cart + Buy Now */}
+          {/* CTA: Quantity + Add to Cart + Buy Now */}
           <div className="mt-6 space-y-3">
+            {buyable && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-accent">Quantity</span>
+                <div className="flex items-center rounded-xl border border-accent/15">
+                  <button
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                    className="px-3.5 py-2.5 text-accent/70 hover:text-primary"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus size={15} />
+                  </button>
+                  <span className="min-w-[36px] text-center text-sm font-bold">{qty}</span>
+                  <button
+                    onClick={() => setQty((q) => Math.min(99, q + 1))}
+                    className="px-3.5 py-2.5 text-accent/70 hover:text-primary"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus size={15} />
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <AddToCartButton
                 variantId={buyable}
+                quantity={qty}
                 className="btn-outline btn-lg btn-block"
                 label="Add to Cart"
               />
               <BuyNowButton
                 variantId={buyable}
+                quantity={qty}
                 className="btn-pop btn-lg btn-block"
                 label="Buy Now"
               />
@@ -222,15 +257,6 @@ export default function Product() {
           {buyable && (
             <BundleOffer product={product} suggestions={bundleSuggestions} />
           )}
-
-          {/* Extra description HTML if provided by Shopify */}
-          {product.descriptionHtml &&
-            product.descriptionHtml !== `<p>${product.description}</p>` && (
-              <div
-                className="prose prose-sm mt-6 max-w-none text-accent/70"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-              />
-            )}
         </div>
       </div>
 
@@ -262,11 +288,13 @@ export default function Product() {
           </div>
           <AddToCartButton
             variantId={buyable}
+            quantity={qty}
             className="btn-outline flex-1 py-3 text-sm"
             label="Add"
           />
           <BuyNowButton
             variantId={buyable}
+            quantity={qty}
             className="btn-pop flex-1 py-3 text-sm"
             label="Buy Now"
           />

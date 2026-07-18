@@ -99,11 +99,21 @@ export function normalizeCollection(c) {
 
 export function normalizeCart(cart) {
   if (!cart) return null;
+  const currencyCode = cart.cost?.subtotalAmount?.currencyCode ?? 'INR';
+  const subtotalValue = parseFloat(cart.cost?.subtotalAmount?.amount ?? '0');
+  const totalValue = parseFloat(cart.cost?.totalAmount?.amount ?? '0');
+  // A discount lowers total below subtotal; surface the saving for the UI.
+  const discountValue = Math.max(0, subtotalValue - totalValue);
+  const appliedCodes = (cart.discountCodes || [])
+    .filter((d) => d.applicable)
+    .map((d) => d.code);
+
   return {
     id: cart.id,
     checkoutUrl: cart.checkoutUrl,
     totalQuantity: cart.totalQuantity || 0,
     subtotal: cart.cost?.subtotalAmount?.amount ?? '0',
+    subtotalValue,
     subtotalFormatted: formatMoney(
       cart.cost?.subtotalAmount?.amount,
       cart.cost?.subtotalAmount?.currencyCode
@@ -113,7 +123,10 @@ export function normalizeCart(cart) {
       cart.cost?.totalAmount?.amount,
       cart.cost?.totalAmount?.currencyCode
     ),
-    currencyCode: cart.cost?.subtotalAmount?.currencyCode ?? 'INR',
+    discountValue,
+    discountFormatted: discountValue > 0 ? formatMoney(discountValue, currencyCode) : null,
+    appliedCodes,
+    currencyCode,
     lines: (cart.lines?.nodes || []).map((line) => {
       const m = line.merchandise || {};
       return {

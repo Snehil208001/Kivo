@@ -4,6 +4,7 @@ import {
   fetchProductByHandle,
   fetchCollections,
   fetchCollectionByHandle,
+  fetchPage,
 } from '../lib/api';
 
 // Generic async-data hook: tracks data/loading/error and re-runs when deps change.
@@ -46,4 +47,8 @@ export function useCollection(handle) {
   return useAsync(() => fetchCollectionByHandle(handle), [handle], {
     skip: !handle,
   });
+}
+
+export function usePage(handle) {
+  return useAsync(() => fetchPage(handle), [handle], { skip: !handle });
 }
