@@ -5,13 +5,22 @@
 // target Shopify can't break the storefront. This runs on Vercel's network,
 // which reaches Shopify fine. Reuses the existing VITE_SHOPIFY_* env vars.
 
+/** Take the first non-empty line — Vercel env values sometimes get pasted with duplicates/newlines. */
+function cleanEnv(value, fallback = '') {
+  return (
+    String(value || '')
+      .split(/[\r\n]+/)
+      .map((s) => s.trim())
+      .find(Boolean) || fallback
+  );
+}
+
 function shopifyConfig() {
-  const domain = (process.env.VITE_SHOPIFY_DOMAIN || '')
+  const domain = cleanEnv(process.env.VITE_SHOPIFY_DOMAIN)
     .replace(/^https?:\/\//, '')
-    .replace(/\/+$/, '')
-    .trim();
-  const version = (process.env.VITE_SHOPIFY_API_VERSION || '2026-07').trim();
-  const token = (process.env.VITE_SHOPIFY_STOREFRONT_TOKEN || '').trim();
+    .replace(/\/+$/, '');
+  const version = cleanEnv(process.env.VITE_SHOPIFY_API_VERSION, '2026-07');
+  const token = cleanEnv(process.env.VITE_SHOPIFY_STOREFRONT_TOKEN);
   return { domain, version, token };
 }
 
@@ -42,7 +51,7 @@ async function handlePost(request) {
     payload = raw ? JSON.parse(raw) : {};
   } catch {
     return Response.json(
-      { errors: [{ message: 'Request body must be JSON', receivedBytes: raw.length }] },
+      { errors: [{ message: 'Request body must be JSON' }] },
       { status: 400 }
     );
   }
@@ -61,7 +70,6 @@ async function handlePost(request) {
   }
 }
 
-// Health check: confirms runtime env without exposing the token.
 async function handleGet() {
   const { domain, version, token } = shopifyConfig();
   return Response.json({
@@ -72,7 +80,6 @@ async function handleGet() {
   });
 }
 
-// Vercel "other frameworks" Web Handler form.
 export default {
   async fetch(request) {
     if (request.method === 'GET') return handleGet();
