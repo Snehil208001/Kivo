@@ -1,4 +1,3 @@
-import { createStorefrontApiClient } from '@shopify/storefront-api-client';
 import {
   PRODUCTS_QUERY,
   PRODUCT_BY_HANDLE_QUERY,
@@ -15,7 +14,6 @@ import { normalizeProduct, normalizeCollection, normalizeCart } from './normaliz
 
 const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN;
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
-const API_VERSION = import.meta.env.VITE_SHOPIFY_API_VERSION || '2026-07';
 
 // Placeholder values shipped in .env.example — treat these as "not configured".
 const PLACEHOLDER_DOMAINS = ['your-store.myshopify.com', ''];
@@ -27,33 +25,33 @@ export const isShopifyConfigured =
   !PLACEHOLDER_DOMAINS.includes(DOMAIN) &&
   !PLACEHOLDER_TOKENS.includes(TOKEN);
 
-let client = null;
-
-if (isShopifyConfigured) {
-  client = createStorefrontApiClient({
-    storeDomain: DOMAIN.startsWith('http') ? DOMAIN : `https://${DOMAIN}`,
-    apiVersion: API_VERSION,
-    publicAccessToken: TOKEN,
-  });
-}
-
 /**
  * Low-level GraphQL request against the Storefront API.
- * Throws a descriptive Error on transport or GraphQL errors so callers can
- * surface a message or fall back to mock data.
+ * Goes through our same-origin proxy (/api/shopify) rather than calling
+ * *.myshopify.com directly, so client-side network/DNS/ad-block filters can't
+ * break the storefront. See api/shopify.js. Throws a descriptive Error on
+ * transport or GraphQL errors so callers can surface a message or fall back.
  */
 export async function shopifyFetch(query, variables = {}) {
-  if (!client) {
+  if (!isShopifyConfigured) {
     throw new Error('SHOPIFY_NOT_CONFIGURED');
   }
 
-  const { data, errors } = await client.request(query, { variables });
+  const resp = await fetch('/api/shopify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!resp.ok) {
+    throw new Error(`Shopify proxy error ${resp.status}`);
+  }
+
+  const { data, errors } = await resp.json();
 
   if (errors) {
-    const message =
-      errors.message ||
-      errors.graphQLErrors?.map((e) => e.message).join('; ') ||
-      'Shopify Storefront API error';
+    const message = Array.isArray(errors)
+      ? errors.map((e) => e.message).join('; ')
+      : errors.message || 'Shopify Storefront API error';
     throw new Error(message);
   }
 
