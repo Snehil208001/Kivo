@@ -13,6 +13,12 @@ export async function shopifyForward({ query, variables }) {
   const version = process.env.VITE_SHOPIFY_API_VERSION || '2026-07';
   const token = process.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
 
+  if (!domain || !token) {
+    throw new Error(
+      'Missing VITE_SHOPIFY_DOMAIN or VITE_SHOPIFY_STOREFRONT_TOKEN'
+    );
+  }
+
   const r = await fetch(`https://${domain}/api/${version}/graphql.json`, {
     method: 'POST',
     headers: {
@@ -24,15 +30,29 @@ export async function shopifyForward({ query, variables }) {
   return { status: r.status, body: await r.text() };
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ errors: [{ message: 'POST only' }] });
-    return;
-  }
+// Web-standard handler (Vercel Functions). Avoids Node req/res body helpers,
+// which were throwing "Invalid JSON" on this Vite project.
+export async function POST(request) {
+  let payload;
   try {
-    const { status, body } = await shopifyForward(req.body || {});
-    res.status(status).setHeader('Content-Type', 'application/json').send(body);
+    payload = await request.json();
+  } catch {
+    return Response.json(
+      { errors: [{ message: 'Request body must be JSON' }] },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const { status, body } = await shopifyForward(payload || {});
+    return new Response(body, {
+      status,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (e) {
-    res.status(502).json({ errors: [{ message: `Shopify proxy failed: ${e.message}` }] });
+    return Response.json(
+      { errors: [{ message: `Shopify proxy failed: ${e.message}` }] },
+      { status: 502 }
+    );
   }
 }
