@@ -73,13 +73,19 @@ export default function ProductCard({ product }) {
       </Link>
 
       <div className="flex flex-1 flex-col p-3.5">
-        {/* Rating */}
-        <div className="flex items-center gap-1 text-xs">
-          <Star size={13} className="text-amber" fill="currentColor" />
-          <span className="font-bold text-accent">{rating}</span>
-          <span className="text-accent/40">({reviews.toLocaleString('en-IN')})</span>
-          <span className="ml-auto text-accent/40">{sold.toLocaleString('en-IN')}+ sold</span>
-        </div>
+        {/* Rating — only shown when real review data exists */}
+        {rating && (
+          <div className="flex items-center gap-1 text-xs">
+            <Star size={13} className="text-amber" fill="currentColor" />
+            <span className="font-bold text-accent">{rating}</span>
+            {reviews != null && (
+              <span className="text-accent/40">({reviews.toLocaleString('en-IN')})</span>
+            )}
+            {sold != null && (
+              <span className="ml-auto text-accent/40">{sold.toLocaleString('en-IN')}+ sold</span>
+            )}
+          </div>
+        )}
 
         <Link to={`/products/${handle}`} className="mt-1.5 flex-1">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-accent">

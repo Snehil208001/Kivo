@@ -1,5 +1,4 @@
 // Flatten Shopify GraphQL shapes into simple objects the UI consumes.
-import { FEATURES_BY_TYPE } from './config';
 
 export function formatMoney(amount, currencyCode = 'INR') {
   const value = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -15,30 +14,6 @@ export function formatMoney(amount, currencyCode = 'INR') {
   }
 }
 
-// Deterministic pseudo-random from a string, so a product always shows the
-// same rating / units-sold / stock across renders and sessions. Shopify's
-// Storefront API doesn't return review data, so we synthesize consistent
-// social-proof signals from the product id.
-function hashString(str = '') {
-  let h = 2166136261;
-  for (let i = 0; i < str.length; i += 1) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return (h >>> 0) / 4294967295; // 0..1
-}
-
-function socialProof(id) {
-  const r = hashString(id);
-  const r2 = hashString(`${id}-sold`);
-  const r3 = hashString(`${id}-stock`);
-  const rating = Math.min(4.9, 4.5 + r * 0.45).toFixed(1); // 4.5–4.9
-  const reviews = 180 + Math.floor(r2 * 3200); // 180–3380
-  const sold = 900 + Math.floor(r * 8000); // 900–8900
-  const lowStock = r3 < 0.4 ? 3 + Math.floor(r3 * 20) : null; // sometimes "only N left"
-  return { rating, reviews, sold, lowStock };
-}
-
 export function normalizeProduct(p) {
   if (!p) return null;
 
@@ -52,18 +27,23 @@ export function normalizeProduct(p) {
   const codAvailable = tags.some((t) => /cod/i.test(t)) || true; // KIVO offers COD storewide
 
   const firstVariant = p.variants?.nodes?.[0];
-  const proof = socialProof(p.id || p.handle || p.title);
 
   return {
     id: p.id,
     title: p.title,
-    ...proof,
+    // Real social proof isn't available from the Storefront API — surface null
+    // so the UI hides ratings/sold/stock rather than showing fabricated data.
+    // Wire a reviews app (metafields) to populate these for real.
+    rating: null,
+    reviews: null,
+    sold: null,
+    lowStock: null,
     handle: p.handle,
     description: p.description || '',
     descriptionHtml: p.descriptionHtml || '',
     productType: p.productType || '',
     tags,
-    features: p.features?.length ? p.features : FEATURES_BY_TYPE[p.productType] || [],
+    features: p.features || [], // only real, product-specific features
     codAvailable,
     availableForSale: p.availableForSale ?? true,
     price: price?.amount ?? '0',

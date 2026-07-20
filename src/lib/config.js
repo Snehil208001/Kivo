@@ -29,26 +29,3 @@ export const HIDDEN_COLLECTIONS = ['frontpage'];
 export const visibleCollections = (collections) =>
   (collections || []).filter((c) => !HIDDEN_COLLECTIONS.includes(c.handle));
 
-// Feature bullets by product type. Shopify's Storefront API has no "features"
-// field, so the PDP derives them from productType. Swap for a product metafield
-// if per-product copy is needed.
-export const FEATURES_BY_TYPE = {
-  Cleaning: [
-    'Cuts everyday cleaning time in half',
-    'Durable build made to last for years',
-    'Easy to rinse, dry and store away',
-    'Safe on common household surfaces',
-  ],
-  'Personal Care': [
-    'Salon-quality results at home',
-    'Gentle enough for daily use',
-    'Ergonomic, no-slip grip',
-    'Lightweight and travel-friendly',
-  ],
-  Eco: [
-    'Plastic-free and fully reusable',
-    'Replaces hundreds of single-use items',
-    'Made from natural, durable materials',
-    'Ships in compostable packaging',
-  ],
-};

@@ -115,27 +115,33 @@ export default function Product() {
                 <Flame size={12} className="text-pop" fill="currentColor" /> Bestseller
               </span>
             )}
-            <span className="badge bg-primary-light text-primary-deep">
-              {product.sold.toLocaleString('en-IN')}+ sold
-            </span>
+            {product.sold != null && (
+              <span className="badge bg-primary-light text-primary-deep">
+                {product.sold.toLocaleString('en-IN')}+ sold
+              </span>
+            )}
           </div>
 
           <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-accent sm:text-4xl">
             {product.title}
           </h1>
 
-          {/* Rating */}
-          <div className="mt-3 flex items-center gap-2">
-            <div className="flex text-amber">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={16} fill="currentColor" />
-              ))}
+          {/* Rating — only when real review data exists */}
+          {product.rating && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="flex text-amber">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} size={16} fill="currentColor" />
+                ))}
+              </div>
+              <span className="text-sm font-semibold text-accent">{product.rating}</span>
+              {product.reviews != null && (
+                <span className="text-sm text-accent/50">
+                  · {product.reviews.toLocaleString('en-IN')} reviews
+                </span>
+              )}
             </div>
-            <span className="text-sm font-semibold text-accent">{product.rating}</span>
-            <span className="text-sm text-accent/50">
-              · {product.reviews.toLocaleString('en-IN')} reviews
-            </span>
-          </div>
+          )}
 
           {/* Price */}
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
