@@ -3,15 +3,20 @@
 // The browser POSTs { query, variables } here instead of calling
 // *.myshopify.com directly, so client-side network/DNS/ad-block filters that
 // target Shopify can't break the storefront. This runs on Vercel's network,
-// which reaches Shopify fine. Reuses the existing VITE_SHOPIFY_* env vars
-// (Vercel exposes all env vars to functions regardless of the VITE_ prefix).
+// which reaches Shopify fine. Reuses the existing VITE_SHOPIFY_* env vars.
 
-export async function shopifyForward({ query, variables }) {
+function shopifyConfig() {
   const domain = (process.env.VITE_SHOPIFY_DOMAIN || '')
     .replace(/^https?:\/\//, '')
-    .replace(/\/+$/, '');
-  const version = process.env.VITE_SHOPIFY_API_VERSION || '2026-07';
-  const token = process.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
+    .replace(/\/+$/, '')
+    .trim();
+  const version = (process.env.VITE_SHOPIFY_API_VERSION || '2026-07').trim();
+  const token = (process.env.VITE_SHOPIFY_STOREFRONT_TOKEN || '').trim();
+  return { domain, version, token };
+}
+
+export async function shopifyForward({ query, variables }) {
+  const { domain, version, token } = shopifyConfig();
 
   if (!domain || !token) {
     throw new Error(
@@ -30,15 +35,14 @@ export async function shopifyForward({ query, variables }) {
   return { status: r.status, body: await r.text() };
 }
 
-// Web-standard handler (Vercel Functions). Avoids Node req/res body helpers,
-// which were throwing "Invalid JSON" on this Vite project.
-export async function POST(request) {
+async function handlePost(request) {
+  const raw = await request.text();
   let payload;
   try {
-    payload = await request.json();
+    payload = raw ? JSON.parse(raw) : {};
   } catch {
     return Response.json(
-      { errors: [{ message: 'Request body must be JSON' }] },
+      { errors: [{ message: 'Request body must be JSON', receivedBytes: raw.length }] },
       { status: 400 }
     );
   }
@@ -56,3 +60,23 @@ export async function POST(request) {
     );
   }
 }
+
+// Health check: confirms runtime env without exposing the token.
+async function handleGet() {
+  const { domain, version, token } = shopifyConfig();
+  return Response.json({
+    ok: Boolean(domain && token),
+    domain: domain || null,
+    version,
+    hasToken: Boolean(token),
+  });
+}
+
+// Vercel "other frameworks" Web Handler form.
+export default {
+  async fetch(request) {
+    if (request.method === 'GET') return handleGet();
+    if (request.method === 'POST') return handlePost(request);
+    return Response.json({ errors: [{ message: 'POST only' }] }, { status: 405 });
+  },
+};
