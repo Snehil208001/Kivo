@@ -10,6 +10,7 @@ const PRODUCT_FRAGMENT = /* GraphQL */ `
     tags
     availableForSale
     productType
+    createdAt
     priceRange {
       minVariantPrice {
         amount

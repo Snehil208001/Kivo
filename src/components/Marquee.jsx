@@ -6,7 +6,7 @@ const DEFAULT_ITEMS = [
   'SHIPS IN 24 HOURS',
   '7-DAY EASY RETURNS',
   'WHATSAPP SUPPORT',
-  'UP TO 50% OFF',
+  'TRENDING · FASHION · BEAUTY · LIFESTYLE',
 ];
 
 export default function Marquee({

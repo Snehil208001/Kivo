@@ -1,7 +1,8 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Menu, X, Search } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingBag, Menu, X, Search, Heart, User } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useCartStore } from '../store/cartStore';
+import { useWishlistStore } from '../store/wishlistStore';
 import { useCollections } from '../hooks/useCatalog';
 import { visibleCollections } from '../lib/config';
 import Logo from './Logo';
@@ -9,10 +10,31 @@ import Logo from './Logo';
 export default function Navbar() {
   const openCart = useCartStore((s) => s.openCart);
   const count = useCartStore((s) => s.cart?.totalQuantity || 0);
+  const wishCount = useWishlistStore((s) => s.handles.length);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const accountRef = useRef(null);
   const { data: collections } = useCollections();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!accountOpen) return;
+    function onDoc(e) {
+      if (accountRef.current && !accountRef.current.contains(e.target)) {
+        setAccountOpen(false);
+      }
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setAccountOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [accountOpen]);
 
   function submitSearch(e) {
     e.preventDefault();
@@ -21,8 +43,6 @@ export default function Navbar() {
     setMobileOpen(false);
   }
 
-  // Whatever collections exist in Shopify become the nav (capped so the bar
-  // doesn't overflow; "Shop All" always covers the rest).
   const NAV_LINKS = [
     { to: '/shop', label: 'Shop All' },
     ...visibleCollections(collections).slice(0, 4).map((c) => ({
@@ -31,16 +51,24 @@ export default function Navbar() {
     })),
   ];
 
+  const accountLinks = [
+    { to: '/track', label: 'Track order' },
+    { to: '/contact', label: 'Contact us' },
+    { to: '/wishlist', label: 'Wishlist' },
+  ];
+
   return (
     <header className="sticky top-0 z-40 border-b border-accent/5 bg-white/85 backdrop-blur-md">
-      {/* Promo strip */}
-      <div className="bg-primary-deep text-center text-[12.5px] font-semibold tracking-wide text-white">
-        <p className="py-2">
-          🚚 Free shipping over ₹499 · 💵 Cash on Delivery · ⚡ Ships in 24h
+      <div className="bg-primary-deep text-center text-[11px] font-semibold tracking-wide text-white sm:text-[12.5px]">
+        <p className="px-3 py-2">
+          <span className="sm:hidden">Free shipping over ₹499 · COD · Ships in 24h</span>
+          <span className="hidden sm:inline">
+            Free shipping over ₹499 · Cash on Delivery · Ships in 24h
+          </span>
         </p>
       </div>
 
-      <nav className="container-page flex h-16 items-center justify-between gap-4">
+      <nav className="container-page flex h-16 items-center justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-2">
           <button
             className="-ml-2 rounded-lg p-2 md:hidden"
@@ -70,7 +98,6 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Search — desktop */}
         <form onSubmit={submitSearch} className="ml-auto hidden max-w-xs flex-1 md:block">
           <div className="relative">
             <Search
@@ -88,21 +115,61 @@ export default function Navbar() {
           </div>
         </form>
 
-        <button
-          onClick={openCart}
-          className="relative rounded-lg p-2 transition hover:bg-primary-light"
-          aria-label="Open cart"
-        >
-          <ShoppingBag size={22} className="text-accent" />
-          {count > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pop px-1 text-[11px] font-bold text-white shadow-pop">
-              {count}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-0.5">
+          <Link
+            to="/wishlist"
+            className="relative rounded-lg p-2 transition hover:bg-primary-light"
+            aria-label="Wishlist"
+          >
+            <Heart size={22} className="text-accent" />
+            {wishCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pop px-1 text-[11px] font-bold text-white shadow-pop">
+                {wishCount}
+              </span>
+            )}
+          </Link>
+
+          <div className="relative" ref={accountRef}>
+            <button
+              type="button"
+              onClick={() => setAccountOpen((o) => !o)}
+              className="rounded-lg p-2 transition hover:bg-primary-light"
+              aria-label="Account menu"
+              aria-expanded={accountOpen}
+            >
+              <User size={22} className="text-accent" />
+            </button>
+            {accountOpen && (
+              <div className="absolute right-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-accent/10 bg-white py-1 shadow-lift">
+                {accountLinks.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    onClick={() => setAccountOpen(false)}
+                    className="block px-3.5 py-2.5 text-sm font-semibold text-accent/80 hover:bg-primary-light hover:text-primary"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={openCart}
+            className="relative rounded-lg p-2 transition hover:bg-primary-light"
+            aria-label="Open cart"
+          >
+            <ShoppingBag size={22} className="text-accent" />
+            {count > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pop px-1 text-[11px] font-bold text-white shadow-pop">
+                {count}
+              </span>
+            )}
+          </button>
+        </div>
       </nav>
 
-      {/* Mobile menu */}
       {mobileOpen && (
         <div className="border-t border-accent/5 bg-white md:hidden">
           <div className="container-page flex flex-col py-2">
@@ -133,6 +200,16 @@ export default function Navbar() {
               >
                 {link.label}
               </NavLink>
+            ))}
+            {accountLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-lg px-2 py-3 text-sm font-semibold text-accent/80"
+              >
+                {link.label}
+              </Link>
             ))}
           </div>
         </div>

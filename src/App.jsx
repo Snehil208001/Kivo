@@ -12,6 +12,7 @@ import Product from './pages/Product';
 import ShopifyPage from './pages/ShopifyPage';
 import Contact from './pages/Contact';
 import Track from './pages/Track';
+import Wishlist from './pages/Wishlist';
 import NotFound from './pages/NotFound';
 
 // Landing pages (no navbar / footer — conversion focused).
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/pages/:handle" element={<ShopifyPage />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/track" element={<Track />} />
+          <Route path="/wishlist" element={<Wishlist />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

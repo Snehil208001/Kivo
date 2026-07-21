@@ -10,21 +10,21 @@ import {
 
 // --- Stats band -----------------------------------------------------------
 const STATS = [
-  { value: '50k+', label: 'Happy homes' },
-  { value: '4.8★', label: 'Avg. rating' },
-  { value: '24h', label: 'Dispatch time' },
-  { value: '100%', label: 'COD available' },
+  { value: 'COD', label: 'Pay on delivery' },
+  { value: '24h', label: 'Fast dispatch' },
+  { value: '7d', label: 'Easy returns' },
+  { value: 'PAN', label: 'India shipping' },
 ];
 
 export function StatsBand() {
   return (
     <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl bg-accent/10 md:grid-cols-4">
       {STATS.map((s) => (
-        <div key={s.label} className="bg-white px-4 py-6 text-center">
-          <p className="font-display text-3xl font-extrabold text-primary sm:text-4xl">
+        <div key={s.label} className="bg-white px-3 py-5 text-center sm:px-4 sm:py-6">
+          <p className="font-display text-2xl font-extrabold text-primary sm:text-4xl">
             {s.value}
           </p>
-          <p className="mt-1 text-sm font-medium text-accent/60">{s.label}</p>
+          <p className="mt-1 text-xs font-medium text-accent/60 sm:text-sm">{s.label}</p>
         </div>
       ))}
     </div>
@@ -35,23 +35,23 @@ export function StatsBand() {
 const VALUES = [
   {
     icon: Sparkles,
-    title: 'Actually works',
-    copy: 'Tools we use ourselves. If it doesn\'t earn its place, we don\'t sell it.',
+    title: 'Always something new',
+    copy: 'Trending drops across lifestyle, fashion, beauty, home and more.',
   },
   {
     icon: Truck,
     title: 'Fast & tracked',
-    copy: 'Dispatched within 24 hours, delivered in 2–4 days, tracked all the way.',
+    copy: 'Orders leave within 24 hours and reach most cities in 2–4 days.',
   },
   {
     icon: BadgeIndianRupee,
     title: 'Pay your way',
-    copy: 'Cash on Delivery or Razorpay. Zero risk — pay when it arrives.',
+    copy: 'Cash on Delivery or online pay. You only pay when it arrives.',
   },
   {
     icon: Leaf,
-    title: 'Kinder choices',
-    copy: 'A growing eco range and plastic-free packaging wherever we can.',
+    title: 'Shop every category',
+    copy: 'One cart for makeup, fashion, lifestyle, eco and everyday essentials.',
   },
 ];
 
@@ -62,7 +62,7 @@ export function ValueProps() {
         <div className="max-w-2xl">
           <span className="eyebrow text-primary-light">Why KIVO</span>
           <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Built to be the easiest yes in your cart.
+            Your next favourite find, in one place.
           </h2>
         </div>
 
@@ -87,26 +87,26 @@ const REVIEWS = [
   {
     name: 'Priya S.',
     city: 'Mumbai',
-    text: 'The spin mop changed my Sunday routine. Floors done in 10 minutes, no backache. COD made it a no-brainer.',
-    product: 'Spin Mop',
+    text: 'Ordered from two different categories in one go. Everything arrived together — COD was super convenient.',
+    product: 'Mixed cart',
   },
   {
     name: 'Rahul M.',
     city: 'Bengaluru',
-    text: 'Ordered at night, arrived in two days, tracked the whole way. Quality is well above the price.',
-    product: 'Spin Scrubber',
+    text: 'Quality matched the photos. Delivery was quick and packing was neat.',
+    product: 'Delivery',
   },
   {
     name: 'Sneha K.',
     city: 'Delhi',
-    text: 'The ice roller is my new morning ritual. Depuffs instantly — genuinely wish I\'d bought it sooner.',
-    product: 'Face Roller',
+    text: 'Love browsing trending and lifestyle picks here. Easy to find something new every week.',
+    product: 'Trending',
   },
   {
     name: 'Aditya R.',
     city: 'Pune',
-    text: 'Replaced almost all our kitchen plastic with the eco bundle. Beautiful, and the packaging really is plastic-free.',
-    product: 'Eco Bundle',
+    text: 'WhatsApp support helped me pick the right size before I ordered. Smooth experience.',
+    product: 'Support',
   },
 ];
 
@@ -114,16 +114,18 @@ export function Reviews() {
   return (
     <section className="container-page py-16">
       <div className="flex flex-col items-center text-center">
-        <span className="eyebrow text-primary">Real reviews</span>
+        <span className="eyebrow text-primary">From our customers</span>
         <h2 className="mt-3 font-display text-3xl font-extrabold tracking-tight text-accent sm:text-4xl">
-          50,000 homes can't be wrong.
+          Happy shoppers across India.
         </h2>
-        <div className="mt-3 flex items-center gap-2 text-amber">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Star key={i} size={18} fill="currentColor" />
-          ))}
-          <span className="ml-1 text-sm font-semibold text-accent">
-            4.8 average from 12,000+ verified reviews
+        <div className="mt-3 flex flex-col items-center gap-1.5 text-amber sm:flex-row sm:gap-2">
+          <div className="flex items-center gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} size={18} fill="currentColor" />
+            ))}
+          </div>
+          <span className="text-center text-sm font-semibold text-accent">
+            Real stories from people who shop with COD
           </span>
         </div>
       </div>
@@ -143,14 +145,14 @@ export function Reviews() {
               "{r.text}"
             </blockquote>
             <figcaption className="mt-4 flex items-center gap-3 border-t border-accent/5 pt-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-light font-bold text-primary-deep">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-light font-bold text-primary-deep">
                 {r.name[0]}
               </span>
-              <div className="text-sm leading-tight">
+              <div className="min-w-0 flex-1 text-sm leading-tight">
                 <p className="font-semibold text-accent">{r.name}</p>
                 <p className="text-accent/50">{r.city}</p>
               </div>
-              <span className="badge ml-auto bg-primary-light text-primary-deep">
+              <span className="badge shrink-0 bg-primary-light text-primary-deep">
                 <ShieldCheck size={11} /> Verified
               </span>
             </figcaption>

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Star, Flame } from 'lucide-react';
+import { Star, Flame, Heart } from 'lucide-react';
 import AddToCartButton from './AddToCartButton';
+import { useWishlistStore } from '../store/wishlistStore';
 
 export default function ProductCard({ product }) {
   if (!product) return null;
@@ -20,8 +21,9 @@ export default function ProductCard({ product }) {
     lowStock,
   } = product;
 
-  // Out of stock => no buyable variant, so the buy button disables itself.
   const buyable = availableForSale ? defaultVariantId : null;
+  const wished = useWishlistStore((s) => s.handles.includes(handle));
+  const toggleWish = useWishlistStore((s) => s.toggle);
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift">
@@ -42,7 +44,6 @@ export default function ProductCard({ product }) {
           </div>
         )}
 
-        {/* Badges */}
         <div className="absolute left-2.5 top-2.5 flex flex-col items-start gap-1.5">
           {discountPercent > 0 && (
             <span className="sticker">-{discountPercent}%</span>
@@ -54,14 +55,30 @@ export default function ProductCard({ product }) {
           )}
         </div>
 
-        {/* Low-stock urgency */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWish(handle);
+          }}
+          className="absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-accent shadow-card backdrop-blur transition hover:text-pop"
+          aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-pressed={wished}
+        >
+          <Heart
+            size={16}
+            className={wished ? 'text-pop' : ''}
+            fill={wished ? 'currentColor' : 'none'}
+          />
+        </button>
+
         {lowStock && (
           <span className="absolute bottom-2.5 left-2.5 badge bg-white/95 text-pop-dark shadow-card backdrop-blur">
-            🔥 Only {lowStock} left
+            Only {lowStock} left
           </span>
         )}
 
-        {/* Desktop hover quick-add */}
         <div className="pointer-events-none absolute inset-x-2.5 bottom-2.5 hidden translate-y-3 opacity-0 transition-all duration-300 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 md:block">
           <AddToCartButton
             variantId={buyable}
@@ -72,8 +89,7 @@ export default function ProductCard({ product }) {
         </div>
       </Link>
 
-      <div className="flex flex-1 flex-col p-3.5">
-        {/* Rating — only shown when real review data exists */}
+      <div className="flex flex-1 flex-col p-3 sm:p-3.5">
         {rating && (
           <div className="flex items-center gap-1 text-xs">
             <Star size={13} className="text-amber" fill="currentColor" />
@@ -107,11 +123,10 @@ export default function ProductCard({ product }) {
           <span className="badge-cod hidden sm:inline-flex">COD</span>
         </div>
 
-        {/* Mobile add-to-cart (always visible; desktop uses hover overlay) */}
         <AddToCartButton
           variantId={buyable}
           className="btn-primary btn-block mt-3 py-2.5 text-sm md:hidden"
-          label="Add to Cart"
+          label="Add"
         />
       </div>
     </div>

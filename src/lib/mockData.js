@@ -37,6 +37,9 @@ function makeProduct({
 }) {
   const gid = `gid://shopify/Product/mock-${idc}`;
   const variantId = `gid://shopify/ProductVariant/mock-${idc}`;
+  // Stagger createdAt so "New Arrivals" sorting works in demo mode.
+  const created = new Date();
+  created.setDate(created.getDate() - idc);
   idc += 1;
   return {
     id: gid,
@@ -47,6 +50,7 @@ function makeProduct({
     tags,
     availableForSale: true,
     productType: type,
+    createdAt: created.toISOString(),
     priceRange: { minVariantPrice: money(price) },
     compareAtPriceRange: {
       minVariantPrice: compareAt ? money(compareAt) : money(price),

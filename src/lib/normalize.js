@@ -62,6 +62,7 @@ export function normalizeProduct(p) {
     variants: p.variants?.nodes || [],
     defaultVariantId: firstVariant?.id || null,
     isBestseller: tags.some((t) => /bestseller/i.test(t)),
+    createdAt: p.createdAt || null,
   };
 }
 

@@ -3,10 +3,12 @@ import { ChevronRight } from 'lucide-react';
 import ProductGrid, { ProductGridSkeleton } from '../components/ProductGrid';
 import { TrustStrip } from '../components/TrustBadges';
 import { useCollection } from '../hooks/useCatalog';
+import { collectionBlurb } from '../lib/config';
 
 export default function CollectionPage() {
   const { handle } = useParams();
   const { data: collection, loading, error } = useCollection(handle);
+  const blurb = collection ? collectionBlurb(collection) : '';
 
   return (
     <div className="container-page py-8">
@@ -25,9 +27,9 @@ export default function CollectionPage() {
         <h1 className="text-3xl font-extrabold tracking-tight text-accent sm:text-4xl">
           {loading ? 'Loading…' : collection?.title || 'Collection'}
         </h1>
-        {collection?.description && (
+        {blurb && (
           <p className="mt-2 max-w-2xl text-accent/60">
-            {collection.description}
+            {blurb}
           </p>
         )}
       </div>

@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ChevronRight,
   Star,
-  ShieldCheck,
   Truck,
   RotateCcw,
   Check,
@@ -11,6 +10,7 @@ import {
   Minus,
   Plus,
   BadgeIndianRupee,
+  Heart,
 } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import AddToCartButton from '../components/AddToCartButton';
@@ -20,11 +20,13 @@ import { TrustStrip } from '../components/TrustBadges';
 import ProductGrid from '../components/ProductGrid';
 import SectionHeader from '../components/SectionHeader';
 import { useProduct, useProducts } from '../hooks/useCatalog';
+import { estimatedDeliveryLabel } from '../lib/config';
+import { useWishlistStore } from '../store/wishlistStore';
 
 function ProductSkeleton() {
   return (
-    <div className="container-page grid gap-8 py-8 md:grid-cols-2">
-      <div className="aspect-square animate-pulse rounded-2xl bg-accent/5" />
+    <div className="container-page grid gap-6 py-6 md:grid-cols-2 md:gap-8 md:py-8">
+      <div className="aspect-[4/5] max-h-[380px] animate-pulse rounded-2xl bg-accent/5 md:aspect-square md:max-h-none" />
       <div className="space-y-4">
         <div className="h-8 w-3/4 animate-pulse rounded bg-accent/5" />
         <div className="h-6 w-1/3 animate-pulse rounded bg-accent/5" />
@@ -35,7 +37,6 @@ function ProductSkeleton() {
   );
 }
 
-// COD Available · Free Shipping · 7-Day Return
 function ProductBadges() {
   const badges = [
     { icon: BadgeIndianRupee, label: 'COD Available' },
@@ -54,11 +55,72 @@ function ProductBadges() {
   );
 }
 
+function decodeEntities(str) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
+function pipeParts(raw) {
+  if (!raw?.includes('|')) return null;
+  const parts = decodeEntities(raw)
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parts.length >= 2 ? parts : null;
+}
+
+function FeatureList({ parts }) {
+  return (
+    <ul className="mt-5 space-y-2.5">
+      {parts.map((part) => (
+        <li
+          key={part}
+          className="flex items-start gap-2.5 text-[15px] leading-relaxed text-accent/75"
+        >
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary-deep">
+            <Check size={12} />
+          </span>
+          <span>{part}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// Supplier SEO blurbs often arrive as "A | B | C". Turn those into readable
+// bullets; leave normal prose alone.
+function ProductDescription({ html, text }) {
+  if (html) {
+    const plain = decodeEntities(
+      html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+    );
+    const parts = pipeParts(plain);
+    if (parts) return <FeatureList parts={parts} />;
+    return (
+      <div className="rte mt-5" dangerouslySetInnerHTML={{ __html: html }} />
+    );
+  }
+
+  if (!text) return null;
+  const parts = pipeParts(text);
+  if (parts) return <FeatureList parts={parts} />;
+  return (
+    <p className="mt-5 text-[15px] leading-relaxed text-accent/70">{text}</p>
+  );
+}
+
 export default function Product() {
   const { handle } = useParams();
   const { data: product, loading, error } = useProduct(handle);
   const { data: allProducts } = useProducts();
   const [qty, setQty] = useState(1);
+  const wished = useWishlistStore((s) => s.handles.includes(handle));
+  const toggleWish = useWishlistStore((s) => s.toggle);
 
   if (loading) return <ProductSkeleton />;
 
@@ -78,10 +140,8 @@ export default function Product() {
     );
   }
 
-  // Out of stock => no buyable variant, so the buy buttons disable themselves.
   const buyable = product.availableForSale ? product.defaultVariantId : null;
 
-  // Same-collection suggestions (fall back to any other products).
   const sameType = (allProducts || []).filter(
     (p) => p.id !== product.id && p.productType === product.productType
   );
@@ -91,28 +151,30 @@ export default function Product() {
   const related = pool.slice(0, 4);
 
   return (
-    <div className="pb-28 md:pb-8">
-      {/* Breadcrumb */}
-      <nav className="container-page flex items-center gap-1 py-4 text-xs text-accent/50">
-        <Link to="/" className="hover:text-primary">Home</Link>
-        <ChevronRight size={14} />
-        <Link to="/shop" className="hover:text-primary">Shop</Link>
-        <ChevronRight size={14} />
+    <div className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8">
+      <nav className="container-page flex min-w-0 items-center gap-1 py-3 text-xs text-accent/50 sm:py-4">
+        <Link to="/" className="hover:text-primary">
+          Home
+        </Link>
+        <ChevronRight size={14} className="shrink-0" />
+        <Link to="/shop" className="hover:text-primary">
+          Shop
+        </Link>
+        <ChevronRight size={14} className="shrink-0" />
         <span className="truncate font-medium text-accent/70">{product.title}</span>
       </nav>
 
-      <div className="container-page grid gap-8 md:grid-cols-2 lg:gap-12">
-        {/* Gallery */}
-        <div className="md:sticky md:top-28 md:self-start">
+      <div className="container-page grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
+        <div className="min-w-0 md:sticky md:top-28 md:self-start">
           <ImageGallery images={product.images} title={product.title} />
         </div>
 
-        {/* Details */}
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {product.isBestseller && (
               <span className="badge bg-accent text-white">
-                <Flame size={12} className="text-pop" fill="currentColor" /> Bestseller
+                <Flame size={12} className="text-pop" fill="currentColor" />{' '}
+                Bestseller
               </span>
             )}
             {product.sold != null && (
@@ -122,11 +184,10 @@ export default function Product() {
             )}
           </div>
 
-          <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-accent sm:text-4xl">
+          <h1 className="mt-2 font-display text-[1.65rem] font-extrabold leading-tight tracking-tight text-accent sm:mt-3 sm:text-4xl">
             {product.title}
           </h1>
 
-          {/* Rating — only when real review data exists */}
           {product.rating && (
             <div className="mt-3 flex items-center gap-2">
               <div className="flex text-amber">
@@ -134,7 +195,9 @@ export default function Product() {
                   <Star key={i} size={16} fill="currentColor" />
                 ))}
               </div>
-              <span className="text-sm font-semibold text-accent">{product.rating}</span>
+              <span className="text-sm font-semibold text-accent">
+                {product.rating}
+              </span>
               {product.reviews != null && (
                 <span className="text-sm text-accent/50">
                   · {product.reviews.toLocaleString('en-IN')} reviews
@@ -143,17 +206,18 @@ export default function Product() {
             </div>
           )}
 
-          {/* Price */}
-          <div className="mt-5 flex flex-wrap items-baseline gap-3">
-            <span className="font-display text-4xl font-extrabold text-accent">
+          <div className="mt-4 flex flex-wrap items-baseline gap-2.5 sm:mt-5 sm:gap-3">
+            <span className="font-display text-3xl font-extrabold text-accent sm:text-4xl">
               {product.priceFormatted}
             </span>
             {product.compareAtFormatted && (
               <>
-                <span className="text-xl text-accent/40 line-through">
+                <span className="text-lg text-accent/40 line-through sm:text-xl">
                   {product.compareAtFormatted}
                 </span>
-                <span className="sticker text-sm">Save {product.discountPercent}%</span>
+                <span className="sticker text-sm">
+                  Save {product.discountPercent}%
+                </span>
               </>
             )}
           </div>
@@ -161,7 +225,6 @@ export default function Product() {
             Inclusive of all taxes · Free shipping over ₹499
           </p>
 
-          {/* Low stock urgency */}
           {product.lowStock && (
             <div className="mt-4 flex items-center gap-2 rounded-xl bg-pop-light px-3 py-2.5 text-sm font-semibold text-pop-dark">
               <Flame size={16} fill="currentColor" />
@@ -169,24 +232,32 @@ export default function Product() {
             </div>
           )}
 
-          {/* Trust badges: COD · Free Shipping · 7-Day Return */}
           <ProductBadges />
 
-          {/* Description */}
-          {/* Description — rich HTML from Shopify when present, else plain text.
-              Rendered once (previously both showed, duplicating the copy). */}
-          {product.descriptionHtml ? (
-            <div
-              className="rte mt-5"
-              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-            />
-          ) : product.description ? (
-            <p className="mt-5 text-[15px] leading-relaxed text-accent/70">
-              {product.description}
-            </p>
-          ) : null}
+          <p className="mt-3 flex items-center gap-2 text-sm font-medium text-accent/70">
+            <Truck size={15} className="text-primary" />
+            {estimatedDeliveryLabel()}
+          </p>
 
-          {/* Features */}
+          <button
+            type="button"
+            onClick={() => toggleWish(handle)}
+            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-accent/70 transition hover:text-pop"
+            aria-pressed={wished}
+          >
+            <Heart
+              size={16}
+              className={wished ? 'text-pop' : ''}
+              fill={wished ? 'currentColor' : 'none'}
+            />
+            {wished ? 'Saved to wishlist' : 'Save to wishlist'}
+          </button>
+
+          <ProductDescription
+            html={product.descriptionHtml}
+            text={product.description}
+          />
+
           {product.features?.length > 0 && (
             <div className="mt-6">
               <h2 className="font-display text-lg font-bold text-accent">
@@ -194,7 +265,10 @@ export default function Product() {
               </h2>
               <ul className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 {product.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm text-accent/80">
+                  <li
+                    key={f}
+                    className="flex items-start gap-2 text-sm text-accent/80"
+                  >
                     <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary-deep">
                       <Check size={12} />
                     </span>
@@ -205,21 +279,26 @@ export default function Product() {
             </div>
           )}
 
-          {/* CTA: Quantity + Add to Cart + Buy Now */}
           <div className="mt-6 space-y-3">
             {buyable && (
               <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-accent">Quantity</span>
+                <span className="text-sm font-semibold text-accent">
+                  Quantity
+                </span>
                 <div className="flex items-center rounded-xl border border-accent/15">
                   <button
+                    type="button"
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
                     className="px-3.5 py-2.5 text-accent/70 hover:text-primary"
                     aria-label="Decrease quantity"
                   >
                     <Minus size={15} />
                   </button>
-                  <span className="min-w-[36px] text-center text-sm font-bold">{qty}</span>
+                  <span className="min-w-[36px] text-center text-sm font-bold">
+                    {qty}
+                  </span>
                   <button
+                    type="button"
                     onClick={() => setQty((q) => Math.min(99, q + 1))}
                     className="px-3.5 py-2.5 text-accent/70 hover:text-primary"
                     aria-label="Increase quantity"
@@ -229,7 +308,8 @@ export default function Product() {
                 </div>
               </div>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
+            {/* Desktop CTAs — phones use the sticky bar */}
+            <div className="hidden gap-3 md:grid md:grid-cols-2">
               <AddToCartButton
                 variantId={buyable}
                 quantity={qty}
@@ -243,46 +323,29 @@ export default function Product() {
                 label="Buy Now"
               />
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-medium text-accent/60">
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-white p-3 shadow-card">
-                <Truck size={18} className="text-primary" />
-                Ships in 24h
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-white p-3 shadow-card">
-                <RotateCcw size={18} className="text-primary" />
-                7-Day Returns
-              </div>
-              <div className="flex flex-col items-center gap-1 rounded-xl bg-white p-3 shadow-card">
-                <ShieldCheck size={18} className="text-primary" />
-                Secure Pay
-              </div>
-            </div>
           </div>
 
-          {/* Bundle: Buy 2, Get 10% Off */}
           {buyable && (
             <BundleOffer product={product} suggestions={bundleSuggestions} />
           )}
         </div>
       </div>
 
-      {/* Trust strip */}
-      <div className="container-page mt-14">
+      <div className="container-page mt-10 sm:mt-14">
         <TrustStrip />
       </div>
 
-      {/* Related */}
       {related.length > 0 && (
-        <div className="container-page mt-16">
+        <div className="container-page mt-12 sm:mt-16">
           <SectionHeader eyebrow="Pairs well with" title="You might also like" />
           <ProductGrid products={related} />
         </div>
       )}
 
-      {/* Sticky mobile bar: Add to Cart + Buy Now → checkout */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-accent/10 bg-white/95 p-3 backdrop-blur md:hidden">
-        <div className="flex items-center gap-2">
-          <div className="shrink-0 leading-tight">
+      {/* Sticky mobile buy bar */}
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-accent/10 bg-white/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-lg items-center gap-2.5">
+          <div className="min-w-[3.5rem] shrink-0 leading-tight">
             <div className="font-display text-lg font-extrabold text-accent">
               {product.priceFormatted}
             </div>
@@ -295,13 +358,13 @@ export default function Product() {
           <AddToCartButton
             variantId={buyable}
             quantity={qty}
-            className="btn-outline flex-1 py-3 text-sm"
+            className="btn-outline flex-1 py-3.5 text-sm"
             label="Add"
           />
           <BuyNowButton
             variantId={buyable}
             quantity={qty}
-            className="btn-pop flex-1 py-3 text-sm"
+            className="btn-pop flex-[1.35] py-3.5 text-sm"
             label="Buy Now"
           />
         </div>

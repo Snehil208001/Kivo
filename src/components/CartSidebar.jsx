@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Plus, Minus, Trash2, ShoppingBag, ShieldCheck, Tag } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Minus,
+  Trash2,
+  ShoppingBag,
+  ShieldCheck,
+  Tag,
+  Truck,
+} from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { MOCK_CHECKOUT_URL } from '../lib/cart';
 import { formatMoney } from '../lib/normalize';
-import { FREE_SHIPPING_THRESHOLD } from '../lib/config';
+import {
+  FREE_SHIPPING_THRESHOLD,
+  estimatedDeliveryLabel,
+} from '../lib/config';
 import { CodBadge } from './TrustBadges';
+import { useProducts } from '../hooks/useCatalog';
 
 export default function CartSidebar() {
   const {
@@ -20,7 +33,6 @@ export default function CartSidebar() {
   const lines = cart?.lines || [];
   const isEmpty = lines.length === 0;
 
-  // Lock body scroll while the cart is open.
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
     return () => {
@@ -28,7 +40,6 @@ export default function CartSidebar() {
     };
   }, [isOpen]);
 
-  // Close on Escape.
   useEffect(() => {
     if (!isOpen) return;
     const onKey = (e) => e.key === 'Escape' && closeCart();
@@ -38,7 +49,6 @@ export default function CartSidebar() {
 
   function handleCheckout() {
     if (!cart?.checkoutUrl) return;
-    // In mock mode there is no real checkout — explain what would happen.
     if (cart.checkoutUrl === MOCK_CHECKOUT_URL) {
       alert(
         'Demo mode: this would redirect to your secure Shopify checkout, where ' +
@@ -47,13 +57,11 @@ export default function CartSidebar() {
       );
       return;
     }
-    // Real Shopify hosted checkout (COD + Razorpay handled there).
     window.location.href = cart.checkoutUrl;
   }
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className={`fixed inset-0 z-50 bg-accent/40 transition-opacity duration-200 ${
           isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
@@ -62,7 +70,6 @@ export default function CartSidebar() {
         aria-hidden="true"
       />
 
-      {/* Panel */}
       <aside
         className={`fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col bg-surface shadow-lift transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
@@ -71,7 +78,6 @@ export default function CartSidebar() {
         aria-label="Shopping cart"
         aria-modal="true"
       >
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-accent/10 bg-white px-4 py-4">
           <h2 className="flex items-center gap-2 text-lg font-bold text-accent">
             <ShoppingBag size={20} />
@@ -91,7 +97,6 @@ export default function CartSidebar() {
           </button>
         </div>
 
-        {/* Body */}
         {isEmpty ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-light">
@@ -176,16 +181,22 @@ export default function CartSidebar() {
                 </li>
               ))}
             </ul>
+
+            <CartRecommended lines={lines} onPick={closeCart} />
           </div>
         )}
 
-        {/* Footer / checkout */}
         {!isEmpty && (
           <div className="border-t border-accent/10 bg-white px-4 py-4">
             <FreeShippingBar
               subtotal={cart.subtotalValue}
               currencyCode={cart.currencyCode}
             />
+
+            <p className="mb-3 flex items-center gap-1.5 text-xs font-medium text-accent/65">
+              <Truck size={13} className="text-primary" />
+              {estimatedDeliveryLabel()}
+            </p>
 
             <DiscountField />
 
@@ -228,8 +239,9 @@ export default function CartSidebar() {
               Secure Checkout
             </button>
 
-            <div className="mt-3 flex items-center justify-center gap-3">
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <CodBadge />
+              <span className="badge bg-accent/5 text-accent/70">Razorpay / UPI</span>
               <span className="text-xs text-accent/50">7-Day Returns</span>
             </div>
           </div>
@@ -239,7 +251,53 @@ export default function CartSidebar() {
   );
 }
 
-// Progress toward the free-shipping threshold.
+function CartRecommended({ lines, onPick }) {
+  const { data: products } = useProducts();
+  const inCart = new Set((lines || []).map((l) => l.handle).filter(Boolean));
+  const recs = (products || [])
+    .filter((p) => p.availableForSale && !inCart.has(p.handle))
+    .slice(0, 3);
+
+  if (!recs.length) return null;
+
+  return (
+    <div className="mt-6 border-t border-accent/10 pt-4">
+      <p className="mb-3 text-xs font-bold uppercase tracking-wide text-accent/50">
+        You may also like
+      </p>
+      <ul className="space-y-2">
+        {recs.map((p) => (
+          <li key={p.id}>
+            <Link
+              to={`/products/${p.handle}`}
+              onClick={onPick}
+              className="flex items-center gap-3 rounded-xl bg-white p-2 shadow-card transition hover:shadow-lift"
+            >
+              <span className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-primary-light/40">
+                {p.featuredImage && (
+                  <img
+                    src={p.featuredImage.url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="line-clamp-1 text-sm font-semibold text-accent">
+                  {p.title}
+                </span>
+                <span className="text-xs font-bold text-primary-deep">
+                  {p.priceFormatted}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function FreeShippingBar({ subtotal, currencyCode }) {
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - (subtotal || 0));
   const pct = Math.min(100, ((subtotal || 0) / FREE_SHIPPING_THRESHOLD) * 100);
@@ -256,7 +314,7 @@ function FreeShippingBar({ subtotal, currencyCode }) {
           </>
         ) : (
           <span className="font-bold text-primary">
-            🎉 You've unlocked free shipping!
+            You've unlocked free shipping!
           </span>
         )}
       </p>
@@ -270,8 +328,6 @@ function FreeShippingBar({ subtotal, currencyCode }) {
   );
 }
 
-// Discount-code input. Applies via the Shopify Cart API; shows the applied code
-// with a remove option, or an inline error if the code is invalid.
 function DiscountField() {
   const applyDiscount = useCartStore((s) => s.applyDiscount);
   const removeDiscount = useCartStore((s) => s.removeDiscount);

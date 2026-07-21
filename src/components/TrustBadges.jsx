@@ -1,25 +1,29 @@
-import { BadgeIndianRupee, RotateCcw, Truck, MessageCircle } from 'lucide-react';
+import {
+  BadgeIndianRupee,
+  RotateCcw,
+  Truck,
+  ShieldCheck,
+  Package,
+} from 'lucide-react';
+import { TRUST_POINTS } from '../lib/config';
 
 const ICONS = {
-  cod: BadgeIndianRupee,
+  shipping: Package,
+  secure: ShieldCheck,
   returns: RotateCcw,
+  cod: BadgeIndianRupee,
   ships: Truck,
-  support: MessageCircle,
+  support: ShieldCheck,
 };
-
-const POINTS = [
-  { key: 'cod', label: 'Cash on Delivery', sub: 'Pay when it arrives' },
-  { key: 'returns', label: '7-Day Returns', sub: 'No questions asked' },
-  { key: 'ships', label: 'Ships in 24h', sub: 'Fast dispatch' },
-  { key: 'support', label: 'WhatsApp Support', sub: 'Real humans, fast' },
-];
 
 // Compact trust bar — used on landing pages and product pages.
 export function TrustStrip({ className = '' }) {
   return (
-    <div className={`grid grid-cols-2 gap-3 sm:grid-cols-4 ${className}`}>
-      {POINTS.map(({ key, label, sub }) => {
-        const Icon = ICONS[key];
+    <div
+      className={`grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 ${className}`}
+    >
+      {TRUST_POINTS.map(({ key, label, sub }) => {
+        const Icon = ICONS[key] || ShieldCheck;
         return (
           <div
             key={key}
@@ -39,7 +43,6 @@ export function TrustStrip({ className = '' }) {
   );
 }
 
-// Single inline chip, e.g. "COD Available".
 export function CodBadge({ className = '', label = 'COD Available' }) {
   return (
     <span className={`badge-cod ${className}`}>

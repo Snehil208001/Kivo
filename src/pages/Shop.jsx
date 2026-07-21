@@ -71,7 +71,7 @@ export default function Shop() {
         subtitle={
           q
             ? `${visible.length} ${visible.length === 1 ? 'product' : 'products'} found`
-            : 'Every KIVO essential, in one place.'
+            : 'Trending, lifestyle, fashion, beauty & more — all in one place.'
         }
       />
 
