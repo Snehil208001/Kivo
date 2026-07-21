@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   X,
   Plus,
@@ -11,7 +11,6 @@ import {
   Truck,
 } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
-import { MOCK_CHECKOUT_URL } from '../lib/cart';
 import { formatMoney } from '../lib/normalize';
 import {
   FREE_SHIPPING_THRESHOLD,
@@ -21,6 +20,7 @@ import { CodBadge } from './TrustBadges';
 import { useProducts } from '../hooks/useCatalog';
 
 export default function CartSidebar() {
+  const navigate = useNavigate();
   const {
     isOpen,
     closeCart,
@@ -48,16 +48,8 @@ export default function CartSidebar() {
   }, [isOpen, closeCart]);
 
   function handleCheckout() {
-    if (!cart?.checkoutUrl) return;
-    if (cart.checkoutUrl === MOCK_CHECKOUT_URL) {
-      alert(
-        'Demo mode: this would redirect to your secure Shopify checkout, where ' +
-          'Cash on Delivery and Razorpay are handled by Shopify.\n\nConnect your ' +
-          'Shopify store in .env to enable real checkout.'
-      );
-      return;
-    }
-    window.location.href = cart.checkoutUrl;
+    closeCart();
+    navigate('/checkout');
   }
 
   return (
@@ -227,7 +219,7 @@ export default function CartSidebar() {
             )}
 
             <p className="mb-3 text-center text-xs text-accent/50">
-              Shipping &amp; taxes calculated at checkout
+              Next: delivery details · then secure Shopify payment
             </p>
 
             <button

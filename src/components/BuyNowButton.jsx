@@ -1,11 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Zap, Loader2 } from 'lucide-react';
-import { buyNowUrl, MOCK_CHECKOUT_URL } from '../lib/cart';
+import { useCartStore } from '../store/cartStore';
 
 /**
- * Express checkout: creates a fresh cart for `variantId` and sends the browser
- * straight to Shopify's hosted checkout (where COD + Razorpay are configured).
- * Does not touch the shopper's persistent cart.
+ * Buy Now: creates a fresh cart for this variant, then goes to /checkout so
+ * phone + address are collected and prefilled into Shopify hosted checkout
+ * (COD + Razorpay stay on Shopify).
  */
 export default function BuyNowButton({
   variantId,
@@ -13,6 +14,8 @@ export default function BuyNowButton({
   className = 'btn-pop btn-lg btn-block',
   label = 'Buy Now',
 }) {
+  const navigate = useNavigate();
+  const startBuyNow = useCartStore((s) => s.startBuyNow);
   const [loading, setLoading] = useState(false);
   const disabled = !variantId || loading;
 
@@ -20,18 +23,8 @@ export default function BuyNowButton({
     if (disabled) return;
     setLoading(true);
     try {
-      const url = await buyNowUrl([{ merchandiseId: variantId, quantity }]);
-      if (!url) throw new Error('No checkout URL returned');
-      if (url === MOCK_CHECKOUT_URL) {
-        setLoading(false);
-        alert(
-          'Demo mode: this would take you straight to Shopify checkout, where ' +
-            'Cash on Delivery and Razorpay are handled by Shopify.\n\nConnect a ' +
-            'store with published products in .env to enable real checkout.'
-        );
-        return;
-      }
-      window.location.href = url; // hand off to Shopify checkout
+      await startBuyNow(variantId, quantity);
+      navigate('/checkout');
     } catch (err) {
       setLoading(false);
       alert(`Sorry, we couldn't start checkout: ${err.message}`);
@@ -40,13 +33,20 @@ export default function BuyNowButton({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       disabled={disabled}
       className={className}
       aria-label={label}
     >
-      {loading ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} fill="currentColor" />}
-      <span>{loading ? 'Starting…' : !variantId ? 'Unavailable' : label}</span>
+      {loading ? (
+        <Loader2 size={18} className="animate-spin" />
+      ) : (
+        <Zap size={18} fill="currentColor" />
+      )}
+      <span>
+        {loading ? 'Starting…' : !variantId ? 'Unavailable' : label}
+      </span>
     </button>
   );
 }

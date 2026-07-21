@@ -6,6 +6,8 @@ import {
   CART_LINES_UPDATE_MUTATION,
   CART_LINES_REMOVE_MUTATION,
   CART_DISCOUNT_CODES_UPDATE_MUTATION,
+  CART_BUYER_IDENTITY_UPDATE_MUTATION,
+  CART_DELIVERY_ADDRESSES_ADD_MUTATION,
 } from './queries';
 import { normalizeCart, formatMoney } from './normalize';
 import { MOCK_PRODUCTS_DEDUPED } from './mockData';
@@ -194,6 +196,62 @@ export async function updateDiscountCodes(cartId, codes) {
   });
   throwOnUserErrors(data.cartDiscountCodesUpdate?.userErrors);
   return normalizeCart(data.cartDiscountCodesUpdate?.cart);
+}
+
+/**
+ * Attach buyer contact + shipping address to the cart so Shopify Checkout
+ * prefills them. `details` shape:
+ * {
+ *   email, phone, firstName, lastName,
+ *   address1, address2?, city, provinceCode, zip, countryCode?
+ * }
+ */
+export async function prepareCartForCheckout(cartId, details) {
+  if (!cartId) throw new Error('No cart to check out');
+  if (!isShopifyConfigured) {
+    return normalizeCart(buildMockCart());
+  }
+
+  const countryCode = details.countryCode || 'IN';
+  const phone = details.phone;
+
+  const identityData = await shopifyFetch(CART_BUYER_IDENTITY_UPDATE_MUTATION, {
+    cartId,
+    buyerIdentity: {
+      email: details.email,
+      phone,
+      countryCode,
+    },
+  });
+  throwOnUserErrors(identityData.cartBuyerIdentityUpdate?.userErrors);
+
+  const addressData = await shopifyFetch(CART_DELIVERY_ADDRESSES_ADD_MUTATION, {
+    cartId,
+    addresses: [
+      {
+        selected: true,
+        address: {
+          deliveryAddress: {
+            firstName: details.firstName,
+            lastName: details.lastName,
+            address1: details.address1,
+            address2: details.address2 || null,
+            city: details.city,
+            provinceCode: details.provinceCode,
+            zip: details.zip,
+            countryCode,
+            phone,
+          },
+        },
+      },
+    ],
+  });
+  throwOnUserErrors(addressData.cartDeliveryAddressesAdd?.userErrors);
+
+  return normalizeCart(
+    addressData.cartDeliveryAddressesAdd?.cart ||
+      identityData.cartBuyerIdentityUpdate?.cart
+  );
 }
 
 export async function buyNowUrl(lines) {

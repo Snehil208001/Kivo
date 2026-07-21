@@ -6,6 +6,7 @@ import {
   updateLines,
   removeLines,
   updateDiscountCodes,
+  prepareCartForCheckout,
 } from '../lib/cart';
 import { isShopifyConfigured } from '../lib/shopify';
 
@@ -155,6 +156,52 @@ export const useCartStore = create((set, get) => ({
       set({ cart, loading: false });
     } catch {
       set({ loading: false });
+    }
+  },
+
+  /**
+   * Prefill Shopify cart with contact + shipping address, then return the
+   * hosted checkout URL. Throws on validation/API errors.
+   */
+  prepareCheckout: async (details) => {
+    const { cartId, cart } = get();
+    if (!cartId || !cart?.totalQuantity) {
+      throw new Error('Your cart is empty');
+    }
+    set({ loading: true, error: null });
+    try {
+      const updated = await prepareCartForCheckout(cartId, details);
+      set({ cart: updated, loading: false });
+      return updated?.checkoutUrl || cart.checkoutUrl;
+    } catch (err) {
+      set({
+        loading: false,
+        error: err.message || 'Could not prepare checkout',
+      });
+      throw err;
+    }
+  },
+
+  /**
+   * Buy Now: create a fresh cart for this variant only, then the UI navigates
+   * to /checkout (same address → Shopify prefill flow as Secure Checkout).
+   */
+  startBuyNow: async (variantId, quantity = 1) => {
+    if (!variantId) throw new Error('This product is unavailable');
+    set({ loading: true, error: null, isOpen: false });
+    try {
+      const cart = await createCart([
+        { merchandiseId: variantId, quantity: Math.max(1, quantity) },
+      ]);
+      persistCartId(cart?.id);
+      set({ cart, cartId: cart?.id, loading: false });
+      return cart;
+    } catch (err) {
+      set({
+        loading: false,
+        error: err.message || 'Could not start Buy Now',
+      });
+      throw err;
     }
   },
 
