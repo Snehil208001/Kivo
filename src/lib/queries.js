@@ -42,6 +42,12 @@ const PRODUCT_FRAGMENT = /* GraphQL */ `
         id
         title
         availableForSale
+        image {
+          url
+          altText
+          width
+          height
+        }
         price {
           amount
           currencyCode

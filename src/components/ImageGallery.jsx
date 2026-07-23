@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ZoomIn, X } from 'lucide-react';
 
 // Shopify often stores the same asset twice (original + media copy with a
@@ -18,7 +18,12 @@ function dedupeImages(images = []) {
   });
 }
 
-export default function ImageGallery({ images = [], title }) {
+function sameImageUrl(a, b) {
+  if (!a || !b) return false;
+  return a.split('?')[0] === b.split('?')[0];
+}
+
+export default function ImageGallery({ images = [], title, focusUrl }) {
   const list = useMemo(() => {
     const unique = dedupeImages(images);
     return unique.length ? unique : [null];
@@ -26,6 +31,14 @@ export default function ImageGallery({ images = [], title }) {
 
   const [active, setActive] = useState(0);
   const [zoomed, setZoomed] = useState(false);
+
+  // When the shopper picks a variant color, jump to that variant's image.
+  useEffect(() => {
+    if (!focusUrl || !list.length) return;
+    const idx = list.findIndex((img) => sameImageUrl(img?.url, focusUrl));
+    if (idx >= 0) setActive(idx);
+  }, [focusUrl, list]);
+
   const current = list[Math.min(active, list.length - 1)];
 
   return (

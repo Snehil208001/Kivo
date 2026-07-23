@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ChevronRight,
@@ -22,6 +22,70 @@ import SectionHeader from '../components/SectionHeader';
 import { useProduct, useProducts } from '../hooks/useCatalog';
 import { estimatedDeliveryLabel } from '../lib/config';
 import { useWishlistStore } from '../store/wishlistStore';
+import { formatMoney, findVariant } from '../lib/normalize';
+
+function initialSelections(variants = []) {
+  const first =
+    variants.find((v) => v.availableForSale) || variants[0] || null;
+  if (!first) return {};
+  return Object.fromEntries(
+    (first.selectedOptions || []).map((o) => [o.name, o.value])
+  );
+}
+
+function VariantPicker({ options, selections, variants, onSelect }) {
+  if (!options?.length) return null;
+  // Hide "Default Title" single-option products (no real choices).
+  const meaningful = options.filter(
+    (o) =>
+      !(
+        o.values.length === 1 &&
+        /default title/i.test(o.values[0])
+      )
+  );
+  if (!meaningful.length) return null;
+
+  return (
+    <div className="mt-6 space-y-4">
+      {meaningful.map((opt) => (
+        <div key={opt.name}>
+          <div className="mb-2 flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-accent">{opt.name}</span>
+            {selections[opt.name] && (
+              <span className="text-sm text-accent/55">{selections[opt.name]}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {opt.values.map((value) => {
+              const next = { ...selections, [opt.name]: value };
+              const match = findVariant(variants, next);
+              const available = match?.availableForSale;
+              const selected = selections[opt.name] === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  disabled={!match}
+                  onClick={() => onSelect(opt.name, value)}
+                  className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition ${
+                    selected
+                      ? 'border-primary bg-primary-light text-primary-deep'
+                      : available
+                        ? 'border-accent/15 text-accent hover:border-primary/50'
+                        : 'border-accent/10 text-accent/35 line-through'
+                  } disabled:cursor-not-allowed disabled:opacity-40`}
+                  aria-pressed={selected}
+                >
+                  {value}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function ProductSkeleton() {
   return (
@@ -119,8 +183,17 @@ export default function Product() {
   const { data: product, loading, error } = useProduct(handle);
   const { data: allProducts } = useProducts();
   const [qty, setQty] = useState(1);
+  const [selections, setSelections] = useState({});
   const wished = useWishlistStore((s) => s.handles.includes(handle));
   const toggleWish = useWishlistStore((s) => s.toggle);
+
+  // Seed option selections when the product (or route) changes.
+  useEffect(() => {
+    if (product?.variants?.length) {
+      setSelections(initialSelections(product.variants));
+      setQty(1);
+    }
+  }, [product?.id]); // eslint-disable-line react-hooks/exhaustive-deps -- seed once per product
 
   if (loading) return <ProductSkeleton />;
 
@@ -140,7 +213,32 @@ export default function Product() {
     );
   }
 
-  const buyable = product.availableForSale ? product.defaultVariantId : null;
+  const activeSelections =
+    Object.keys(selections).length > 0
+      ? selections
+      : initialSelections(product.variants);
+  const selectedVariant =
+    findVariant(product.variants, activeSelections) ||
+    product.variants.find((v) => v.availableForSale) ||
+    product.variants[0] ||
+    null;
+  const buyable =
+    selectedVariant?.availableForSale ? selectedVariant.id : null;
+
+  const variantPrice = selectedVariant?.price;
+  const variantCompare = selectedVariant?.compareAtPrice;
+  const priceValue = parseFloat(variantPrice?.amount ?? product.price);
+  const compareValue = parseFloat(variantCompare?.amount ?? '0');
+  const hasDiscount = compareValue > priceValue;
+  const priceFormatted = variantPrice
+    ? formatMoney(variantPrice.amount, variantPrice.currencyCode)
+    : product.priceFormatted;
+  const compareAtFormatted = hasDiscount
+    ? formatMoney(variantCompare.amount, variantCompare.currencyCode)
+    : null;
+  const discountPercent = hasDiscount
+    ? Math.round(((compareValue - priceValue) / compareValue) * 100)
+    : 0;
 
   const sameType = (allProducts || []).filter(
     (p) => p.id !== product.id && p.productType === product.productType
@@ -149,6 +247,10 @@ export default function Product() {
   const pool = sameType.length >= 2 ? sameType : others;
   const bundleSuggestions = pool.filter((p) => p.availableForSale).slice(0, 2);
   const related = pool.slice(0, 4);
+
+  function selectOption(name, value) {
+    setSelections((prev) => ({ ...prev, [name]: value }));
+  }
 
   return (
     <div className="pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-8">
@@ -166,7 +268,11 @@ export default function Product() {
 
       <div className="container-page grid gap-6 md:grid-cols-2 md:gap-8 lg:gap-12">
         <div className="min-w-0 md:sticky md:top-28 md:self-start">
-          <ImageGallery images={product.images} title={product.title} />
+          <ImageGallery
+            images={product.images}
+            title={product.title}
+            focusUrl={selectedVariant?.image?.url}
+          />
         </div>
 
         <div className="min-w-0">
@@ -208,15 +314,15 @@ export default function Product() {
 
           <div className="mt-4 flex flex-wrap items-baseline gap-2.5 sm:mt-5 sm:gap-3">
             <span className="font-display text-3xl font-extrabold text-accent sm:text-4xl">
-              {product.priceFormatted}
+              {priceFormatted}
             </span>
-            {product.compareAtFormatted && (
+            {compareAtFormatted && (
               <>
                 <span className="text-lg text-accent/40 line-through sm:text-xl">
-                  {product.compareAtFormatted}
+                  {compareAtFormatted}
                 </span>
                 <span className="sticker text-sm">
-                  Save {product.discountPercent}%
+                  Save {discountPercent}%
                 </span>
               </>
             )}
@@ -252,6 +358,13 @@ export default function Product() {
             />
             {wished ? 'Saved to wishlist' : 'Save to wishlist'}
           </button>
+
+          <VariantPicker
+            options={product.options}
+            selections={activeSelections}
+            variants={product.variants}
+            onSelect={selectOption}
+          />
 
           <ProductDescription
             html={product.descriptionHtml}
@@ -323,6 +436,11 @@ export default function Product() {
                 label="Buy Now"
               />
             </div>
+            {!buyable && (
+              <p className="rounded-xl bg-accent/5 px-3 py-2.5 text-sm font-semibold text-accent/70">
+                This option is currently unavailable
+              </p>
+            )}
           </div>
 
           {buyable && (
@@ -347,11 +465,11 @@ export default function Product() {
         <div className="mx-auto flex max-w-lg items-center gap-2.5">
           <div className="min-w-[3.5rem] shrink-0 leading-tight">
             <div className="font-display text-lg font-extrabold text-accent">
-              {product.priceFormatted}
+              {priceFormatted}
             </div>
-            {product.compareAtFormatted && (
+            {compareAtFormatted && (
               <span className="text-[11px] text-accent/40 line-through">
-                {product.compareAtFormatted}
+                {compareAtFormatted}
               </span>
             )}
           </div>

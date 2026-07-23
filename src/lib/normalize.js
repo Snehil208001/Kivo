@@ -61,9 +61,34 @@ export function normalizeProduct(p) {
     images: p.images?.nodes || [],
     variants: p.variants?.nodes || [],
     defaultVariantId: firstVariant?.id || null,
+    options: buildProductOptions(p.variants?.nodes || []),
     isBestseller: tags.some((t) => /bestseller/i.test(t)),
     createdAt: p.createdAt || null,
   };
+}
+
+/** Derive option groups (e.g. Color → [Black, Blue…]) from variants. */
+export function buildProductOptions(variants = []) {
+  const map = new Map();
+  for (const v of variants) {
+    for (const opt of v.selectedOptions || []) {
+      if (!map.has(opt.name)) map.set(opt.name, []);
+      const list = map.get(opt.name);
+      if (!list.includes(opt.value)) list.push(opt.value);
+    }
+  }
+  return [...map.entries()].map(([name, values]) => ({ name, values }));
+}
+
+/** Find the variant matching the current option selections. */
+export function findVariant(variants = [], selections = {}) {
+  return (
+    variants.find((v) =>
+      (v.selectedOptions || []).every(
+        (o) => selections[o.name] === o.value
+      )
+    ) || null
+  );
 }
 
 export function normalizeCollection(c) {
